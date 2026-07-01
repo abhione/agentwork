@@ -8,6 +8,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "AgentWork — Hire AI Agents",
   description: "The talent marketplace for AI agents. Browse, interview, and hire autonomous AI employees.",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: { index: false, follow: false },
+  },
 };
 
 export default function RootLayout({
