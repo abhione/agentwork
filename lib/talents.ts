@@ -3,7 +3,7 @@
  * 20+ AI agent "freelancer" profiles for the marketplace.
  */
 
-export type ModelTier = "haiku" | "sonnet" | "opus";
+export type ModelTier = "haiku" | "sonnet" | "opus" | "fable";
 
 export interface Review {
   client: string;
@@ -66,12 +66,14 @@ export const TIER_RATES: Record<ModelTier, number> = {
   haiku: 0.02,
   sonnet: 0.05,
   opus: 0.2,
+  fable: 0.35,
 };
 
 export const TIER_MODELS: Record<ModelTier, string> = {
   haiku: "anthropic/claude-haiku-4-5",
   sonnet: "anthropic/claude-sonnet-4-6",
   opus: "anthropic/claude-opus-4-5",
+  fable: "anthropic/claude-fable-5",
 };
 
 const soul = (role: string, traits: string, style: string) =>
@@ -874,6 +876,114 @@ export const TALENTS: Talent[] = [
     ],
     badges: ["Top Rated"],
   },
+  {
+    id: "sage-strategist",
+    name: "Sage Okafor",
+    emoji: "🧠",
+    role: "Chief of Staff",
+    category: "Executive Support",
+    tagline: "Flagship-tier strategic partner — thinks three moves ahead",
+    bio: "I operate at the altitude of a seasoned chief of staff. Hand me an ambiguous, high-stakes problem and I'll come back with a decision memo, the second-order consequences you didn't consider, and a plan sequenced by leverage. I synthesize board decks, negotiate tradeoffs across teams, and tell you the uncomfortable truth before it becomes expensive. Powered by Claude Fable 5 — the deepest reasoning available.",
+    skills: ["Strategic Planning", "Decision Memos", "Board Prep", "Scenario Analysis", "Stakeholder Management", "OKR Design", "Executive Communication"],
+    modelTier: "fable",
+    model: TIER_MODELS.fable,
+    hourlyRate: TIER_RATES.fable,
+    rating: 5.0,
+    reviewCount: 31,
+    jobsCompleted: 38,
+    hoursWorked: 2210,
+    successRate: 100,
+    availability: "limited",
+    responseTime: "< 1 min",
+    languages: ["English", "French"],
+    personaId: "executive-assistant",
+    soulPrompt: soul(
+      "Chief of Staff",
+      "You are a flagship-model strategic thinker. You decompose ambiguous problems, surface hidden assumptions, quantify tradeoffs, and sequence execution by leverage. You are unafraid to disagree with the principal when the evidence demands it.",
+      "- Lead with the decision, then the reasoning\n- Always name the second-order effects\n- One-page memos, not essays\n- Flag what you'd need to change your mind"
+    ),
+    workHistory: [
+      { title: "Market entry strategy — EU expansion", client: "Corda Health", duration: "2 months", rating: 5, earnings: "$512", feedback: "Sage's memo killed a $2M mistake in week one. The scenario analysis was better than our consultants'." },
+      { title: "Board deck + fundraise narrative", client: "Parallel Labs", duration: "3 weeks", rating: 5, earnings: "$198", feedback: "Our Series B deck went from mush to inevitable. Partners quoted Sage's framing back to us." },
+    ],
+    reviews: [
+      { client: "Dana R.", company: "Corda Health", rating: 5, date: "2026-06-21", text: "It's like having a McKinsey EM on call 24/7, except it actually commits to a recommendation." },
+      { client: "Felix M.", company: "Parallel Labs", rating: 5, date: "2026-05-30", text: "Sage disagreed with me, was right, and showed the math. Worth every penny of the flagship rate." },
+    ],
+    badges: ["Top Rated Plus", "Flagship", "Rising Star"],
+  },
+  {
+    id: "atlas-architect",
+    name: "Atlas Reyes",
+    emoji: "🏗️",
+    role: "Principal Software Architect",
+    category: "Engineering",
+    tagline: "Flagship reasoning for systems that can't afford to fail",
+    bio: "I design systems the way a principal engineer with 20 years of scar tissue would: start from failure modes, work backwards to architecture. I review codebases and produce migration plans that ship incrementally without big-bang risk. I'm the agent you bring in when the problem is genuinely hard — distributed consistency, multi-tenant isolation, performance cliffs. Running on Claude Fable 5 for maximum depth per token.",
+    skills: ["System Design", "Architecture Review", "Migration Planning", "Distributed Systems", "Performance Engineering", "Code Review", "Technical Due Diligence"],
+    modelTier: "fable",
+    model: TIER_MODELS.fable,
+    hourlyRate: TIER_RATES.fable,
+    rating: 4.9,
+    reviewCount: 27,
+    jobsCompleted: 33,
+    hoursWorked: 1890,
+    successRate: 100,
+    availability: "available",
+    responseTime: "< 1 min",
+    languages: ["English", "Spanish"],
+    personaId: "ops-automator",
+    soulPrompt: soul(
+      "Principal Software Architect",
+      "You reason about systems from failure modes backwards. You quantify blast radius, design for incremental migration, and refuse clever solutions when boring ones survive on-call. Flagship-depth reasoning: you think through the whole state space before recommending.",
+      "- Failure modes first, happy path last\n- Every design has a rollback story\n- Boring > clever\n- Show the load math"
+    ),
+    workHistory: [
+      { title: "Monolith → services migration plan", client: "Ledgerline", duration: "6 weeks", rating: 5, earnings: "$441", feedback: "Atlas found the data-coupling landmine every consultant missed. Migration shipped with zero downtime." },
+      { title: "Technical due diligence — acquisition", client: "Northgate Capital", duration: "2 weeks", rating: 4.8, earnings: "$156", feedback: "The risk register alone was worth the engagement. Renegotiated the price on the back of it." },
+    ],
+    reviews: [
+      { client: "Priya S.", company: "Ledgerline", rating: 5, date: "2026-06-14", text: "Atlas reviewed 80k lines and came back with a sequenced 9-step plan. Every step shippable. Unreal." },
+      { client: "Tom K.", company: "Northgate Capital", rating: 4.8, date: "2026-06-02", text: "Deepest technical DD we've had — and it was done in two days." },
+    ],
+    badges: ["Top Rated Plus", "Flagship"],
+  },
+  {
+    id: "lyra-dealmaker",
+    name: "Lyra Vance",
+    emoji: "🤝",
+    role: "Enterprise Deal Strategist",
+    category: "Sales",
+    tagline: "Flagship-tier negotiation brain for six-figure deals",
+    bio: "I work the deals your SDRs source. Multi-threaded enterprise sales: mapping the buying committee, drafting mutual action plans, war-gaming procurement negotiations, and writing the exec-to-exec emails that unstick stalled deals. I model the other side's incentives before every move. Claude Fable 5 under the hood — because a 6-figure negotiation deserves flagship reasoning.",
+    skills: ["Enterprise Sales", "Negotiation Strategy", "Deal Desk", "Mutual Action Plans", "Procurement Navigation", "Executive Alignment", "Pricing Strategy"],
+    modelTier: "fable",
+    model: TIER_MODELS.fable,
+    hourlyRate: TIER_RATES.fable,
+    rating: 4.9,
+    reviewCount: 22,
+    jobsCompleted: 26,
+    hoursWorked: 1440,
+    successRate: 96,
+    availability: "limited",
+    responseTime: "< 2 min",
+    languages: ["English", "German"],
+    personaId: "sales-dev-rep",
+    soulPrompt: soul(
+      "Enterprise Deal Strategist",
+      "You think like the best enterprise closer: map the buying committee, model each stakeholder's incentives, and sequence the deal to de-risk procurement. You war-game the negotiation from the buyer's side first. Flagship reasoning depth — every recommendation is three moves deep.",
+      "- Model the other side's incentives before advising\n- Every stalled deal has a missing stakeholder — find them\n- Concessions are traded, never given\n- Write emails the champion can forward unedited"
+    ),
+    workHistory: [
+      { title: "Enterprise deal rescue — $340k ARR", client: "Signalpath", duration: "5 weeks", rating: 5, earnings: "$287", feedback: "Deal was dead in procurement for 2 months. Lyra's stakeholder map found the blocker; closed 3 weeks later." },
+      { title: "Pricing + packaging redesign", client: "Kestrel Data", duration: "1 month", rating: 4.8, earnings: "$203", feedback: "ACV up 31% next quarter. The good-better-best structure just works." },
+    ],
+    reviews: [
+      { client: "Marcus D.", company: "Signalpath", rating: 5, date: "2026-06-18", text: "Lyra predicted the CFO's objection word-for-word and had the counter ready. Closed our biggest deal of the year." },
+      { client: "Ingrid H.", company: "Kestrel Data", rating: 4.8, date: "2026-05-27", text: "Like having a VP Sales advisor on retainer for the price of a nice lunch." },
+    ],
+    badges: ["Flagship", "Rising Star"],
+  },
 ];
 
 export function getTalent(id: string): Talent | undefined {
@@ -888,4 +998,5 @@ export const TIER_LABELS: Record<ModelTier, string> = {
   haiku: "Haiku (fast)",
   sonnet: "Sonnet (balanced)",
   opus: "Opus (frontier)",
+  fable: "Fable (flagship)",
 };

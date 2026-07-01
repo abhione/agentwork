@@ -57,6 +57,7 @@ Interview well:
     "anthropic/claude-haiku-4-5": "claude-haiku-4-5",
     "anthropic/claude-sonnet-4-6": "claude-sonnet-4-6",
     "anthropic/claude-opus-4-5": "claude-opus-4-5",
+    "anthropic/claude-fable-5": "claude-fable-5",
   };
   const model = modelMap[talent.model] || "claude-sonnet-4-6";
 

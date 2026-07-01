@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Briefcase, Users } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
+import { LogoutButton } from "@/components/logout-button";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -44,6 +45,7 @@ export default function RootLayout({
                 <Users className="h-4 w-4" />
                 Your Team
               </Link>
+              <LogoutButton />
             </nav>
           </div>
         </header>
