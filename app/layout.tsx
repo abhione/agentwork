@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Briefcase, Users } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { LogoutButton } from "@/components/logout-button";
+import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,11 +17,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen antialiased">
@@ -51,7 +57,7 @@ export default function RootLayout({
                 <Users className="h-4 w-4" />
                 Your Team
               </Link>
-              <LogoutButton />
+              <LogoutButton email={user?.email} />
             </nav>
           </div>
         </header>

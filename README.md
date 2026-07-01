@@ -20,7 +20,7 @@ pnpm dev          # → http://localhost:3900
 
 ### Requirements
 
-1. **Auth** (see below) — set `AUTH_PASSWORD` and `AUTH_SECRET` in production.
+1. **Auth** (see below) — set the Supabase env vars (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
 2. **Anthropic API key** (for interviews & chat) — either:
    - `echo 'ANTHROPIC_API_KEY=sk-ant-…' > .env.local`, or
    - a key at `~/.openclaw/credentials/anthropic-key` (picked up automatically)
@@ -32,20 +32,32 @@ pnpm dev          # → http://localhost:3900
 
 ## Auth
 
-The whole app (pages **and** API routes, including `/api/chat`) is gated behind a shared
-access password with an HMAC-signed session cookie. No external auth provider, no database.
+The whole app (pages **and** API routes, including `/api/chat`) requires a signed-in
+**Supabase Auth** user (email + password accounts). Sessions are cookie-based via
+`@supabase/ssr` and auto-refreshed in the middleware.
 
 | Env var | Purpose |
 |---|---|
-| `AUTH_PASSWORD` | The shared access password checked at `/login` |
-| `AUTH_SECRET` | Secret used to HMAC-sign the session cookie (use a long random string, e.g. `openssl rand -hex 32`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (e.g. `https://sebsnowworhrqqyschao.supabase.co`) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) API key — safe for the client; RLS/auth still applies |
 
-- **Production:** both vars are required — login returns a clear 500 error if unset.
-  On Fly: `fly secrets set AUTH_PASSWORD=… AUTH_SECRET=…`
-- **Dev:** falls back to password `agentwork-dev` and a static dev secret so local dev works out of the box.
-- Sessions last 30 days (HTTP-only, Secure, SameSite=Lax cookie). Log out via the header button.
-- Enforcement lives in `middleware.ts`: unauthenticated pages redirect to `/login?next=…`,
-  unauthenticated API calls get `401` JSON. Only `/login`, `/api/auth/login`, and static assets are public.
+- **Local dev:** put both vars in `.env.local` (gitignored). Get the anon key with
+  `supabase projects api-keys --project-ref sebsnowworhrqqyschao`.
+- **Fly:** `fly secrets set NEXT_PUBLIC_SUPABASE_URL=… NEXT_PUBLIC_SUPABASE_ANON_KEY=…`
+  (note: `NEXT_PUBLIC_*` vars are inlined at build time — ensure they're available
+  during the Docker build, e.g. via build args, not just runtime secrets).
+- **Creating a user:** use the **Sign up** toggle on `/login`, or the Supabase dashboard
+  (Authentication → Users → Add user), or:
+  ```bash
+  curl -s "https://sebsnowworhrqqyschao.supabase.co/auth/v1/signup" \
+    -H "apikey: $NEXT_PUBLIC_SUPABASE_ANON_KEY" -H "Content-Type: application/json" \
+    -d '{"email":"you@example.com","password":"…"}'
+  ```
+- Email confirmations are **disabled** for this project (autoconfirm on), so signup
+  logs you straight in. If re-enabled, `/auth/callback` handles the confirmation link.
+- Enforcement lives in `middleware.ts` (`lib/supabase/middleware.ts`): unauthenticated
+  pages redirect to `/login?next=…`, unauthenticated API calls get `401` JSON. Only
+  `/login`, `/auth/*`, and static assets are public.
 
 ## Architecture
 
@@ -57,15 +69,15 @@ app/
   team/page.tsx            # Your team (Box Claws boxes + hire mapping)
   team/[id]/page.tsx       # Employee dashboard (VNC + chat + metrics)
   api/chat/route.ts        # Streams Anthropic responses w/ persona system prompt
-  api/auth/                # login/logout (signed session cookie)
-  login/page.tsx           # access password gate
-middleware.ts              # session enforcement for all routes
+  auth/callback/route.ts   # Supabase email-confirmation code exchange
+  login/page.tsx           # email + password sign in / sign up
+middleware.ts              # Supabase session refresh + enforcement for all routes
 lib/
   talents.ts               # 23-agent talent database (personas, reviews, rates)
   boxclaws.ts              # Box Claws API client (deploy/start/stop/destroy/VNC)
   hires.ts                 # localStorage mapping: boxId → talentId
   server/anthropic.ts      # server-side API key resolution
-  auth.ts                  # HMAC session tokens + password verification (zero-dep)
+  supabase/                # Supabase clients: client.ts, server.ts, middleware.ts
 components/
   hire-dialog.tsx          # Hire wizard → POST /boxapi/boxes (deploys container)
   talent-avatar.tsx        # deterministic gradient avatars
