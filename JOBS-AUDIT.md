@@ -109,7 +109,9 @@ naturally. No violation beyond the shared avatar problem.
   emoji, and inner top highlight. Tier = visual identity on every card.
 - Updated every render site: landing preview cards + hero chat mock + testimonials,
   marketplace TalentCard, talent profile header, interview header/empty-state/message rows,
-  /team cards, /team/[id] header. Boxes with no linked talent get a neutral white-alpha ring.
+  /team cards, /team/[id] header, and the HireDialog title (was still on the old signature
+  — caught in a final sweep; now passes tier/avatar/name like everywhere else). Boxes with
+  no linked talent get a neutral white-alpha ring.
 
 ### 2. Hero depth — SEV-1 → fixed
 - Three backdrop planes now move at different rates on scroll: grid texture (fast, −80px),
@@ -150,9 +152,11 @@ naturally. No violation beyond the shared avatar problem.
 - `next build` passes clean.
 - Prod build on :3905 — `/` 200, `/marketplace` 307 → /login (unauth), `/api/chat` 401.
 - Screenshots (pixelshot, desktop 1440 + mobile 390):
-  `/tmp/agentwork-shots/desktop/localhost_3905.png.tiles/` and
-  `/tmp/agentwork-shots/mobile/localhost_3905.png.tiles/`. Below-fold dark tiles are the
-  known reveal/screenshotter artifact.
+  `/tmp/agentwork-final/desktop/localhost_3905.png.tiles/` and
+  `/tmp/agentwork-final/mobile/localhost_3905.png.tiles/` (final pass; earlier set at
+  `/tmp/agentwork-shots/`). Below-fold dark tiles are the known reveal/screenshotter artifact.
+- Re-verified after the HireDialog fix: rebuild clean, `/` 200, `/marketplace` 307,
+  `/api/chat` 401 on :3905; test server killed after verification.
 
 ---
 
