@@ -2,6 +2,9 @@ app = "agentwork"
 primary_region = "sjc"
 
 [build]
+  [build.args]
+    NEXT_PUBLIC_SUPABASE_URL = "https://sebsnowworhrqqyschao.supabase.co"
+    NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlYnNub3d3b3JocnFxeXNjaGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MzgwNDYsImV4cCI6MjA5ODUxNDA0Nn0.mDwSKwaFteuUiXiuqgQ3CXn2jQNYBHKjoR4S_Q7A9Is"
 
 [http_service]
   internal_port = 3900

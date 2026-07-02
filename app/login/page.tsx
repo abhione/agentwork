@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Briefcase, KeyRound, Loader2, MailCheck, UserPlus } from "lucide-react";
+import { Briefcase, KeyRound, Loader2, MailCheck, Shield, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ function friendlyError(message: string): string {
     return "Too many attempts. Please wait a moment and try again.";
   if (m.includes("already registered")) return "That email is already registered. Try signing in.";
   if (m.includes("password should be")) return message;
+  if (m.includes("email not confirmed")) return "Please confirm your email before signing in.";
   return message || "Something went wrong. Try again.";
 }
 
@@ -31,6 +32,9 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
+
+  // Check for error params (e.g., from suspended redirect)
+  const errorParam = searchParams.get("error");
 
   function nextPath(): string {
     const next = searchParams.get("next");
@@ -54,14 +58,58 @@ function LoginForm() {
 
     setLoading(true);
     const supabase = createClient();
+    
     try {
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
           setError(friendlyError(error.message));
           return;
         }
+
+        // Check if MFA is required
+        if (data.session) {
+          // Check MFA assurance level
+          const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          
+          if (aal?.currentLevel === "aal1" && aal?.nextLevel === "aal2") {
+            // User has MFA enrolled but needs to verify
+            router.replace(`/mfa/verify?next=${encodeURIComponent(nextPath())}`);
+            return;
+          }
+        }
+
+        // Check approval status before redirecting
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("status, mfa_enrolled")
+          .eq("id", data.user?.id)
+          .single();
+
+        if (profile?.status === "pending") {
+          router.replace("/pending");
+          return;
+        }
+        if (profile?.status === "rejected") {
+          router.replace("/rejected");
+          return;
+        }
+        if (profile?.status === "suspended") {
+          await supabase.auth.signOut();
+          setError("Your account has been suspended.");
+          return;
+        }
+
+        // Check if MFA needs to be set up (approved but no MFA)
+        if (profile?.status === "approved" && !profile?.mfa_enrolled) {
+          router.replace(`/mfa/setup?next=${encodeURIComponent(nextPath())}`);
+          return;
+        }
+
+        router.replace(nextPath());
+        router.refresh();
       } else {
+        // Signup mode
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -78,9 +126,9 @@ function LoginForm() {
           setAwaitingConfirm(true);
           return;
         }
+        // If somehow got a session (shouldn't with email confirm), go to pending
+        router.replace("/pending");
       }
-      router.replace(nextPath());
-      router.refresh();
     } catch {
       setError("Network error. Try again.");
     } finally {
@@ -102,7 +150,15 @@ function LoginForm() {
               Click it to activate your account, then sign in.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
+              <div className="flex items-start gap-2">
+                <Shield className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  AgentWork is invite-only. After confirming your email, an admin will review your request.
+                </p>
+              </div>
+            </div>
             <Button
               variant="secondary"
               className="w-full"
@@ -136,10 +192,16 @@ function LoginForm() {
           <CardDescription>
             {mode === "signin"
               ? "Enter your email and password to continue."
-              : "Create an account with your email and a password."}
+              : "Request access with your email and a password."}
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {errorParam === "account_suspended" && (
+            <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+              <p className="text-sm text-red-400">Your account has been suspended.</p>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -196,9 +258,21 @@ function LoginForm() {
               ) : (
                 <UserPlus className="h-4 w-4" />
               )}
-              {mode === "signin" ? "Sign in" : "Create account"}
+              {mode === "signin" ? "Sign in" : "Request access"}
             </Button>
           </form>
+          
+          {mode === "signup" && (
+            <div className="mt-4 rounded-lg border border-border/50 bg-muted/30 p-3">
+              <div className="flex items-start gap-2">
+                <Shield className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                <p className="text-xs text-muted-foreground">
+                  AgentWork is invite-only. Your signup will be reviewed by an admin before access is granted.
+                </p>
+              </div>
+            </div>
+          )}
+          
           <p className="mt-4 text-center text-sm text-muted-foreground">
             {mode === "signin" ? (
               <>
@@ -208,7 +282,7 @@ function LoginForm() {
                   onClick={() => switchMode("signup")}
                   className="font-medium text-emerald-400 hover:underline"
                 >
-                  Sign up
+                  Request access
                 </button>
               </>
             ) : (
