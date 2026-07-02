@@ -73,7 +73,14 @@ export function HireDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
-            <TalentAvatar id={talent.id} emoji={talent.emoji} size="sm" />
+            <TalentAvatar
+              id={talent.id}
+              emoji={talent.emoji}
+              tier={talent.modelTier}
+              avatar={talent.avatar}
+              name={talent.name}
+              size="sm"
+            />
             <span>
               Hire {talent.name}
               <span className="block text-sm font-normal text-muted-foreground">{talent.role}</span>

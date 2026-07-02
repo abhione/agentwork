@@ -26,6 +26,8 @@ export interface Talent {
   id: string;
   name: string;
   emoji: string;
+  /** Optional generated portrait, served from /public (e.g. "/avatars/nova-sdr.png") */
+  avatar?: string;
   role: string;
   category: string;
   tagline: string;

@@ -3,7 +3,7 @@
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Rocket, Send, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Rocket, Send, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TalentAvatar } from "@/components/talent-avatar";
@@ -89,14 +89,25 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
 
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
-      {/* Interview header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+      {/* Interview header — hairline accent gives the room a stage */}
+      <div className="relative border-b border-border bg-card/50 backdrop-blur-sm">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/35 to-transparent"
+        />
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <Link href={`/talent/${talent.id}`} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <TalentAvatar id={talent.id} emoji={talent.emoji} size="sm" />
+            <TalentAvatar
+              id={talent.id}
+              emoji={talent.emoji}
+              tier={talent.modelTier}
+              avatar={talent.avatar}
+              name={talent.name}
+              size="sm"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-semibold">{talent.name}</h1>
@@ -130,7 +141,21 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
         <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
           {messages.length === 0 && (
             <div className="animate-fade-up py-10 text-center">
-              <TalentAvatar id={talent.id} emoji={talent.emoji} size="lg" className="mx-auto" />
+              <div className="relative mx-auto w-fit">
+                <div
+                  aria-hidden
+                  className="absolute -inset-5 rounded-full bg-emerald-500/[0.10] blur-2xl"
+                />
+                <TalentAvatar
+                  id={talent.id}
+                  emoji={talent.emoji}
+                  tier={talent.modelTier}
+                  avatar={talent.avatar}
+                  name={talent.name}
+                  size="lg"
+                  className="relative"
+                />
+              </div>
               <h2 className="mt-4 font-display text-xl font-semibold tracking-tight">
                 Interview {talent.name.split(" ")[0]}
               </h2>
@@ -143,10 +168,11 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
                   <button
                     key={q}
                     onClick={() => send(q)}
-                    className="flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.02] px-4 py-2.5 text-left text-sm text-muted-foreground transition-all duration-200 hover:border-emerald-500/40 hover:bg-emerald-500/[0.04] hover:text-foreground"
+                    className="group flex items-center gap-2.5 rounded-lg border border-white/[0.07] bg-white/[0.02] px-4 py-2.5 text-left text-sm text-muted-foreground transition-all duration-200 hover:border-emerald-500/40 hover:bg-emerald-500/[0.04] hover:text-foreground"
                   >
-                    <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                    {q}
+                    <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-400/80 transition-colors group-hover:text-emerald-300" />
+                    <span className="flex-1">{q}</span>
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0 -translate-x-1 text-emerald-400 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
                   </button>
                 ))}
               </div>
@@ -163,7 +189,15 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
                 )}
               >
                 {m.role === "assistant" && (
-                  <TalentAvatar id={talent.id} emoji={talent.emoji} size="sm" className="mt-0.5 h-8 w-8 text-base" />
+                  <TalentAvatar
+                    id={talent.id}
+                    emoji={talent.emoji}
+                    tier={talent.modelTier}
+                    avatar={talent.avatar}
+                    name={talent.name}
+                    size="sm"
+                    className="mt-0.5 h-8 w-8 text-base"
+                  />
                 )}
                 <div
                   className={cn(

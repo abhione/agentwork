@@ -152,7 +152,13 @@ function TalentCard({ talent, index }: { talent: Talent; index: number }) {
       <CardContent className="p-5">
         <Link href={`/talent/${talent.id}`} className="block">
           <div className="flex items-start gap-4">
-            <TalentAvatar id={talent.id} emoji={talent.emoji} />
+            <TalentAvatar
+              id={talent.id}
+              emoji={talent.emoji}
+              tier={talent.modelTier}
+              avatar={talent.avatar}
+              name={talent.name}
+            />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="truncate font-semibold group-hover:text-emerald-300">

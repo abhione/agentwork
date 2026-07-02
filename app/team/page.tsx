@@ -163,7 +163,13 @@ export default function TeamPage() {
                 <Link href={`/team/${box.id}`} className="block">
                   <div className="flex items-start gap-3">
                     <div className="relative">
-                      <TalentAvatar id={talent?.id || box.id} emoji={talent?.emoji || "🤖"} />
+                      <TalentAvatar
+                        id={talent?.id || box.id}
+                        emoji={talent?.emoji || "🤖"}
+                        tier={talent?.modelTier}
+                        avatar={talent?.avatar}
+                        name={talent?.name}
+                      />
                       <span
                         className={cn(
                           "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card",
@@ -195,25 +201,44 @@ export default function TeamPage() {
                     </div>
                   </div>
 
-                  {/* VNC thumbnail */}
-                  <div className="mt-4 aspect-video overflow-hidden rounded-lg border border-border/60 bg-black/50">
-                    {isRunning && box.ports?.novnc ? (
-                      <iframe
-                        src={`http://localhost:${box.ports.novnc}/vnc.html?autoconnect=true&resize=scale&view_only=true`}
-                        className="pointer-events-none h-full w-full origin-top-left"
-                        title={`${box.name} screen`}
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                        <Monitor className="mr-2 h-4 w-4" />
-                        {isRunning ? "Screen unavailable" : "Agent paused"}
-                      </div>
-                    )}
+                  {/* VNC thumbnail — framed like a workspace window */}
+                  <div className="mt-4 overflow-hidden rounded-lg border border-border/60 bg-black/50">
+                    <div className="flex items-center justify-between border-b border-border/60 bg-white/[0.03] px-3 py-1.5">
+                      <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        <Monitor className="h-3 w-3" />
+                        {talent?.name?.split(" ")[0] || box.name} · workspace
+                      </span>
+                      {isRunning ? (
+                        <span className="flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-widest text-emerald-300">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                          LIVE
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[10px] tracking-widest text-muted-foreground">
+                          PAUSED
+                        </span>
+                      )}
+                    </div>
+                    <div className="aspect-video">
+                      {isRunning && box.ports?.novnc ? (
+                        <iframe
+                          src={`http://localhost:${box.ports.novnc}/vnc.html?autoconnect=true&resize=scale&view_only=true`}
+                          className="pointer-events-none h-full w-full origin-top-left"
+                          title={`${box.name} screen`}
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                          <Monitor className="mr-2 h-4 w-4" />
+                          {isRunning ? "Screen unavailable" : "Agent paused"}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </Link>
 
+                {/* Action row: primary manage, secondary state toggle, tertiary destroy */}
                 <div className="mt-4 flex items-center gap-2">
-                  <Button asChild variant="outline" size="sm" className="flex-1 gap-1.5">
+                  <Button asChild size="sm" className="flex-1 gap-1.5">
                     <Link href={`/team/${box.id}`}>
                       <MessageSquare className="h-3.5 w-3.5" /> Manage
                     </Link>
@@ -224,7 +249,7 @@ export default function TeamPage() {
                       size="sm"
                       disabled={isBusy}
                       onClick={() => action(box.id, () => stopBox(box.id), `${talent?.name || box.name} paused`)}
-                      className="gap-1.5"
+                      className="w-24 gap-1.5"
                     >
                       {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pause className="h-3.5 w-3.5" />}
                       Pause
@@ -235,22 +260,23 @@ export default function TeamPage() {
                       size="sm"
                       disabled={isBusy}
                       onClick={() => action(box.id, () => startBox(box.id), `${talent?.name || box.name} back to work`)}
-                      className="gap-1.5"
+                      className="w-24 gap-1.5"
                     >
                       {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                       Resume
                     </Button>
                   )}
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
                     disabled={isBusy}
+                    aria-label={`Terminate ${talent?.name || box.name}`}
                     onClick={() => {
                       if (confirm(`Terminate ${talent?.name || box.name}? This destroys their workspace.`)) {
                         action(box.id, () => destroyBox(box.id), "Contract ended");
                       }
                     }}
-                    className="text-red-400 hover:text-red-300"
+                    className="h-8 w-8 shrink-0 text-red-400/80 hover:bg-red-500/10 hover:text-red-300"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>

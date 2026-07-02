@@ -140,6 +140,98 @@
   animation: glow-drift 14s ease-in-out infinite;
 }
 
+/* Counter-phase drift for the secondary glow layer */
+@keyframes glow-drift-alt {
+  0%, 100% { transform: translateX(5%) scale(1.05); opacity: 0.9; }
+  50% { transform: translateX(-5%) scale(1); opacity: 0.7; }
+}
+
+@utility animate-glow-drift-alt {
+  animation: glow-drift-alt 18s ease-in-out infinite;
+}
+
+/* ---------- hero parallax (scroll-driven, pure CSS, progressive) ---------- */
+
+@keyframes parallax-slow {
+  to { translate: 0 60px; }
+}
+@keyframes parallax-mid {
+  to { translate: 0 120px; }
+}
+@keyframes parallax-fast {
+  to { translate: 0 -80px; }
+}
+
+@supports (animation-timeline: scroll()) {
+  .parallax-slow {
+    animation: parallax-slow linear both;
+    animation-timeline: scroll();
+    animation-range: 0 100vh;
+  }
+  .parallax-mid {
+    animation: parallax-mid linear both;
+    animation-timeline: scroll();
+    animation-range: 0 100vh;
+  }
+  .parallax-fast {
+    animation: parallax-fast linear both;
+    animation-timeline: scroll();
+    animation-range: 0 100vh;
+  }
+}
+
+/* ---------- page transitions (app/template.tsx) ---------- */
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.page-enter {
+  animation: page-enter 0.22s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+
+/* ---------- how-it-works progress rail ---------- */
+
+.rail-track {
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 8%) 12%, oklch(1 0 0 / 8%) 88%, transparent);
+}
+
+.rail-fill {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(0.696 0.17 162.48 / 55%) 12%,
+    oklch(0.696 0.17 162.48 / 55%) 88%,
+    transparent
+  );
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.rail-drawn .rail-fill {
+  transform: scaleX(1);
+}
+
+.rail-step-icon {
+  opacity: 0.45;
+  transform: scale(0.92);
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s cubic-bezier(0.21, 0.47, 0.32, 0.98),
+    box-shadow 0.45s ease;
+  transition-delay: var(--rail-delay, 0ms);
+}
+
+.rail-drawn .rail-step-icon {
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 0 24px -6px rgba(16, 185, 129, 0.35);
+}
+
 /* Scroll-reveal (driven by components/reveal.tsx) */
 .reveal {
   opacity: 0;
@@ -162,9 +254,23 @@
     transition: none;
   }
   .animate-glow-drift,
+  .animate-glow-drift-alt,
   .animate-fade-up,
-  .animate-pulse-ring {
+  .animate-pulse-ring,
+  .parallax-slow,
+  .parallax-mid,
+  .parallax-fast,
+  .page-enter {
     animation: none;
+  }
+  .rail-fill {
+    transform: scaleX(1);
+    transition: none;
+  }
+  .rail-step-icon {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
   html {
     scroll-behavior: auto;

@@ -199,14 +199,24 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-      {/* Header */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/team" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div className="relative">
-            <TalentAvatar id={talent?.id || box.id} emoji={talent?.emoji || "🤖"} />
+      {/* Header — back-link row, then identity + actions */}
+      <Link
+        href="/team"
+        className="group mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back to
+        Your Team
+      </Link>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="relative shrink-0">
+            <TalentAvatar
+              id={talent?.id || box.id}
+              emoji={talent?.emoji || "🤖"}
+              tier={talent?.modelTier}
+              avatar={talent?.avatar}
+              name={talent?.name}
+            />
             <span
               className={cn(
                 "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-background",
@@ -214,10 +224,14 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
               )}
             />
           </div>
-          <div>
-            <h1 className="font-display text-xl font-bold tracking-tight">{displayName}</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>{talent?.role || box.config?.persona || "Custom Agent"}</span>
+          <div className="min-w-0">
+            <h1 className="truncate font-display text-xl font-bold tracking-tight">
+              {displayName}
+            </h1>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+              <span className="truncate">
+                {talent?.role || box.config?.persona || "Custom Agent"}
+              </span>
               <Badge
                 variant="secondary"
                 className={cn("text-[10px]", isRunning && "bg-emerald-500/15 text-emerald-300")}
@@ -230,7 +244,7 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {vnc && (
             <Button asChild variant="outline" size="sm" className="gap-1.5">
               <a href={vnc} target="_blank" rel="noreferrer">
@@ -308,7 +322,24 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
             )}
           </CardHeader>
           <CardContent>
-            <div className="aspect-video overflow-hidden rounded-lg border border-border/60 bg-black">
+            <div className="overflow-hidden rounded-lg border border-border/60 bg-black">
+              <div className="flex items-center justify-between border-b border-border/60 bg-white/[0.03] px-3 py-1.5">
+                <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <Monitor className="h-3 w-3" />
+                  {displayName} · desktop
+                </span>
+                {isRunning ? (
+                  <span className="flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-widest text-emerald-300">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                    LIVE
+                  </span>
+                ) : (
+                  <span className="font-mono text-[10px] tracking-widest text-muted-foreground">
+                    PAUSED
+                  </span>
+                )}
+              </div>
+              <div className="aspect-video">
               {isRunning && vnc ? (
                 <iframe src={vnc} className="h-full w-full" title={`${displayName} workspace`} />
               ) : (
@@ -326,28 +357,27 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
                   )}
                 </div>
               )}
+              </div>
             </div>
 
-            {/* Activity feed */}
+            {/* Activity feed — timeline with rail */}
             <div className="mt-5">
               <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
                 <Activity className="h-4 w-4 text-emerald-400" /> Work Log
               </h3>
-              <div className="space-y-3">
+              <div className="relative ml-1 space-y-4 border-l border-border/80 pl-5">
                 {activity.map((a, i) => (
-                  <div key={i} className="flex items-start gap-3 text-sm">
+                  <div key={i} className="relative text-sm">
                     <span
                       className={cn(
-                        "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                        "absolute -left-[25px] top-1.5 h-2 w-2 rounded-full ring-4 ring-background",
                         a.type === "success" && "bg-emerald-400",
                         a.type === "info" && "bg-cyan-400",
                         a.type === "warn" && "bg-amber-400"
                       )}
                     />
-                    <div className="flex-1">
-                      <p>{a.text}</p>
-                      <p className="text-xs text-muted-foreground">{a.time}</p>
-                    </div>
+                    <p className="leading-snug">{a.text}</p>
+                    <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{a.time}</p>
                   </div>
                 ))}
               </div>
@@ -430,12 +460,28 @@ function MetricCard({
 }) {
   return (
     <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <CardContent className="flex items-center gap-3 p-4">
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+            accent
+              ? "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30"
+              : "bg-white/[0.04] text-muted-foreground ring-1 ring-white/[0.07]"
+          )}
+        >
           {icon}
-          {label}
         </div>
-        <p className={cn("mt-1.5 font-mono text-xl font-medium tracking-tight", accent && "text-emerald-400")}>{value}</p>
+        <div className="min-w-0">
+          <p className="truncate text-xs text-muted-foreground">{label}</p>
+          <p
+            className={cn(
+              "mt-0.5 truncate font-mono text-lg font-medium leading-tight tracking-tight",
+              accent && "text-emerald-400"
+            )}
+          >
+            {value}
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

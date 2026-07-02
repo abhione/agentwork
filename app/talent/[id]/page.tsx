@@ -45,7 +45,15 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
         <CardContent className="-mt-10 p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-end gap-4">
-              <TalentAvatar id={talent.id} emoji={talent.emoji} size="xl" className="ring-4 ring-background" />
+              <TalentAvatar
+                id={talent.id}
+                emoji={talent.emoji}
+                tier={talent.modelTier}
+                avatar={talent.avatar}
+                name={talent.name}
+                size="xl"
+                className="ring-4 ring-background"
+              />
               <div className="pb-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="font-display text-2xl font-bold tracking-[-0.02em]">{talent.name}</h1>

@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { TalentAvatar } from "@/components/talent-avatar";
 import { RatingStars } from "@/components/rating-stars";
 import { Reveal } from "@/components/reveal";
+import { ProgressRail } from "@/components/progress-rail";
 import { getTalent, formatRate, TIER_RATES, TIER_LABELS, TALENTS, type Talent } from "@/lib/talents";
 
 // Curated preview across tiers (incl. the Fable flagship)
@@ -60,12 +61,16 @@ export default function LandingPage() {
     <div>
       {/* ---------- Hero ---------- */}
       <section className="relative overflow-hidden border-b border-border/60">
-        {/* layered backdrop: grid texture + drifting emerald glow */}
-        <div aria-hidden className="hero-grid pointer-events-none absolute inset-0" />
-        <div
-          aria-hidden
-          className="animate-glow-drift pointer-events-none absolute -top-40 left-1/2 h-[480px] w-[720px] -translate-x-1/2 rounded-full bg-emerald-500/[0.13] blur-[120px]"
-        />
+        {/* layered backdrop: grid texture + three glow layers on separate
+            scroll-parallax planes (pure CSS scroll-driven animation) */}
+        <div aria-hidden className="parallax-fast hero-grid pointer-events-none absolute inset-0" />
+        <div aria-hidden className="parallax-slow pointer-events-none absolute inset-0">
+          <div className="animate-glow-drift absolute -top-48 left-1/2 h-[560px] w-[880px] -translate-x-1/2 rounded-full bg-emerald-500/[0.09] blur-[160px]" />
+        </div>
+        <div aria-hidden className="parallax-mid pointer-events-none absolute inset-0">
+          <div className="animate-glow-drift-alt absolute -top-24 left-[38%] h-[380px] w-[560px] -translate-x-1/2 rounded-full bg-emerald-400/[0.06] blur-[130px]" />
+          <div className="absolute -top-10 left-[64%] h-[280px] w-[400px] -translate-x-1/2 rounded-full bg-teal-400/[0.05] blur-[110px]" />
+        </div>
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent"
@@ -134,7 +139,14 @@ export default function LandingPage() {
             <div className="surface-card relative rounded-2xl p-4 text-left sm:p-6">
               <div className="mb-4 flex items-center justify-between border-b border-border/60 pb-3.5">
                 <div className="flex items-center gap-2.5">
-                  <TalentAvatar id="sage-strategist" emoji="🧠" size="sm" />
+                  <TalentAvatar
+                    id="sage-strategist"
+                    emoji="🧠"
+                    tier="fable"
+                    avatar={getTalent("sage-strategist")?.avatar}
+                    name="Sage Okafor"
+                    size="sm"
+                  />
                   <div>
                     <p className="text-sm font-semibold leading-tight">Sage Okafor</p>
                     <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -262,7 +274,15 @@ export default function LandingPage() {
                     &ldquo;{review.text}&rdquo;
                   </blockquote>
                   <figcaption className="mt-5 flex items-center gap-3 border-t border-border/60 pt-4">
-                    <TalentAvatar id={talent.id} emoji={talent.emoji} size="sm" className="h-9 w-9 text-lg" />
+                    <TalentAvatar
+                      id={talent.id}
+                      emoji={talent.emoji}
+                      tier={talent.modelTier}
+                      avatar={talent.avatar}
+                      name={talent.name}
+                      size="sm"
+                      className="h-9 w-9 text-lg"
+                    />
                     <div>
                       <p className="text-xs font-semibold">
                         {review.client} · {review.company}
@@ -287,16 +307,17 @@ export default function LandingPage() {
             From job post to first deliverable in minutes
           </h2>
         </Reveal>
-        <div className="relative mt-14">
-          {/* connecting rail (desktop) */}
-          <div
-            aria-hidden
-            className="absolute left-0 right-0 top-6 hidden h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent lg:block"
-          />
+        <ProgressRail className="relative mt-14">
+          {/* connecting rail (desktop): static track + scroll-drawn fill */}
+          <div aria-hidden className="absolute left-0 right-0 top-6 hidden lg:block">
+            <div className="rail-track absolute inset-x-0 h-px" />
+            <div className="rail-fill absolute inset-x-0 h-px" />
+          </div>
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <Reveal delay={0}>
               <StepCard
                 n={1}
+                delay={200}
                 icon={<Search className="h-5 w-5 text-emerald-400" />}
                 title="Browse"
                 body="Search 26 specialist profiles by role, skill, and rate — SDRs, analysts, bookkeepers, architects."
@@ -305,6 +326,7 @@ export default function LandingPage() {
             <Reveal delay={90}>
               <StepCard
                 n={2}
+                delay={480}
                 icon={<MessageSquare className="h-5 w-5 text-emerald-400" />}
                 title="Interview"
                 body="Chat with candidates for free. Same model, same persona as the agent you'd hire."
@@ -313,6 +335,7 @@ export default function LandingPage() {
             <Reveal delay={180}>
               <StepCard
                 n={3}
+                delay={760}
                 icon={<Rocket className="h-5 w-5 text-emerald-400" />}
                 title="Hire"
                 body="One click deploys the agent into an isolated container with its own desktop workspace."
@@ -321,13 +344,14 @@ export default function LandingPage() {
             <Reveal delay={270}>
               <StepCard
                 n={4}
+                delay={1040}
                 icon={<Users className="h-5 w-5 text-emerald-400" />}
                 title="Manage"
                 body="Your team dashboard shows uptime, spend, and a live screen. Pause or fire any time."
               />
             </Reveal>
           </div>
-        </div>
+        </ProgressRail>
       </section>
 
       {/* ---------- Pricing ---------- */}
@@ -486,7 +510,13 @@ function PreviewCard({ talent }: { talent: Talent }) {
     <Card className="group relative h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/30 hover:shadow-[0_12px_40px_-12px_rgba(16,185,129,0.15),inset_0_1px_0_rgba(255,255,255,0.06)]">
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
-          <TalentAvatar id={talent.id} emoji={talent.emoji} />
+          <TalentAvatar
+            id={talent.id}
+            emoji={talent.emoji}
+            tier={talent.modelTier}
+            avatar={talent.avatar}
+            name={talent.name}
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
               <h3 className="truncate font-semibold">{talent.name}</h3>
@@ -569,15 +599,20 @@ function StepCard({
   icon,
   title,
   body,
+  delay = 0,
 }: {
   n: number;
   icon: React.ReactNode;
   title: string;
   body: string;
+  delay?: number;
 }) {
   return (
     <div className="relative h-full">
-      <div className="relative z-10 mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 shadow-[0_0_24px_-6px_rgba(16,185,129,0.35)] ring-1 ring-emerald-500/40">
+      <div
+        className="rail-step-icon relative z-10 mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/40"
+        style={{ "--rail-delay": `${delay}ms` } as React.CSSProperties}
+      >
         {icon}
       </div>
       <span className="eyebrow">Step {n}</span>
