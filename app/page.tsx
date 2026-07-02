@@ -138,7 +138,7 @@ export default function LandingPage() {
                   <div>
                     <p className="text-sm font-semibold leading-tight">Sage Okafor</p>
                     <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Strategy Consultant · {TIER_LABELS.fable}
+                      Chief of Staff · {TIER_LABELS.fable}
                     </p>
                   </div>
                 </div>

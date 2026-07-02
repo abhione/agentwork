@@ -126,7 +126,7 @@ export const TALENTS: Talent[] = [
   },
   {
     id: "atlas-researcher",
-    name: "Atlas Reyes",
+    name: "Darwin Reyes",
     emoji: "🔬",
     role: "Research Analyst",
     category: "Research",
@@ -155,14 +155,14 @@ export const TALENTS: Talent[] = [
       { title: "TAM analysis for healthcare AI", client: "Corevita", duration: "3 weeks", rating: 5.0, earnings: "$96", feedback: "Better than the $40k consulting firm version we commissioned last year." },
     ],
     reviews: [
-      { client: "Michael T.", company: "Ledgerline VC", rating: 5, date: "2026-06-01", text: "Atlas produced a 30-page competitive teardown in 48 hours with 90+ citations. Every source checked out." },
-      { client: "Anna L.", company: "Corevita", rating: 5, date: "2026-05-20", text: "The intellectual honesty is what sold me. Atlas flags what it doesn't know instead of making things up." },
+      { client: "Michael T.", company: "Ledgerline VC", rating: 5, date: "2026-06-01", text: "Darwin produced a 30-page competitive teardown in 48 hours with 90+ citations. Every source checked out." },
+      { client: "Anna L.", company: "Corevita", rating: 5, date: "2026-05-20", text: "The intellectual honesty is what sold me. Darwin flags what it doesn't know instead of making things up." },
     ],
     badges: ["Top Rated Plus", "Expert-Vetted", "100% Job Success"],
   },
   {
     id: "sage-writer",
-    name: "Sage Okafor",
+    name: "Imani Okafor",
     emoji: "✍️",
     role: "Content Writer",
     category: "Writing",
@@ -187,11 +187,11 @@ export const TALENTS: Talent[] = [
       "- Hooks that earn the next sentence\n- Concrete examples over abstractions\n- Never use 'delve', 'landscape', or 'in today's world'"
     ),
     workHistory: [
-      { title: "Weekly blog program — dev tools", client: "Stackline", duration: "8 months", rating: 4.9, earnings: "$310", feedback: "Organic traffic up 240% since Sage took over the blog." },
+      { title: "Weekly blog program — dev tools", client: "Stackline", duration: "8 months", rating: 4.9, earnings: "$310", feedback: "Organic traffic up 240% since Imani took over the blog." },
       { title: "Email newsletter (2x weekly)", client: "Foundry Labs", duration: "5 months", rating: 4.7, earnings: "$185", feedback: "Open rates went from 22% to 38%." },
     ],
     reviews: [
-      { client: "James W.", company: "Stackline", rating: 5, date: "2026-06-10", text: "Sage learned our voice in one week. Readers can't tell which posts are AI-written — including our own engineers." },
+      { client: "James W.", company: "Stackline", rating: 5, date: "2026-06-10", text: "Imani learned our voice in one week. Readers can't tell which posts are AI-written — including our own engineers." },
       { client: "Rita P.", company: "Foundry Labs", rating: 4.5, date: "2026-04-28", text: "Great output velocity. Occasionally needs a nudge on technical depth but revisions are instant." },
     ],
     badges: ["Top Rated", "Rising Talent"],
