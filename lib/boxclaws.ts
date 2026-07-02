@@ -16,6 +16,8 @@ export interface BoxRecord {
     persona?: string;
     model?: string;
   };
+  /** Public noVNC URL provided by the hosted Box Claws backend (token-guarded proxy). */
+  vncUrl?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -88,6 +90,16 @@ export async function execInBox(id: string, command: string[]): Promise<{ stdout
 }
 
 export function novncUrl(box: BoxRecord, opts?: { scale?: boolean }): string | null {
+  // Hosted backend (Fly): server returns a ready-made public URL through its
+  // token-guarded VNC proxy. Prefer it.
+  if (box.vncUrl) {
+    if (opts?.scale && !box.vncUrl.includes("resize=")) {
+      const sep = box.vncUrl.includes("?") ? "&" : "?";
+      return `${box.vncUrl}${sep}resize=scale&view_only=false`;
+    }
+    return box.vncUrl;
+  }
+  // Local dev fallback: Box Claws on localhost with per-box host ports.
   if (!box.ports?.novnc) return null;
   const params = opts?.scale
     ? "autoconnect=true&resize=scale&view_only=false"

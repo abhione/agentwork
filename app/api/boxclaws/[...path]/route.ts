@@ -20,6 +20,9 @@ import { createClient } from "@/lib/supabase/server";
 
 const BOXCLAWS_URL = process.env.BOXCLAWS_URL || "http://localhost:3457";
 const TIMEOUT_MS = 15_000;
+// Box creation pulls/starts a container and waits for the agent gateway —
+// give it much longer than regular reads.
+const DEPLOY_TIMEOUT_MS = 120_000;
 
 async function requireUser() {
   const supabase = await createClient();
@@ -46,10 +49,11 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
   }
 
   const url = upstreamUrl(path);
+  const isDeploy = req.method === "POST" && path.length === 1 && path[0] === "boxes";
   const init: RequestInit = {
     method: req.method,
     headers: { "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: AbortSignal.timeout(isDeploy ? DEPLOY_TIMEOUT_MS : TIMEOUT_MS),
   };
 
   if (req.method !== "GET" && req.method !== "HEAD") {
