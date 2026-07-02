@@ -16,19 +16,9 @@ const nextConfig = {
       },
     ];
   },
-  async rewrites() {
-    return [
-      {
-        // Proxy to Box Claws API (avoids CORS / hardcoded hosts)
-        source: '/boxapi/:path*',
-        destination: 'http://localhost:3457/api/:path*',
-      },
-      {
-        source: '/boxhealth',
-        destination: 'http://localhost:3457/health',
-      },
-    ];
-  },
+  // Box Claws access goes through the auth-gated server proxy at
+  // /api/boxclaws/* (app/api/boxclaws/[...path]/route.ts) so the platform
+  // Anthropic key is injected server-side and never reaches the client.
 };
 
 module.exports = nextConfig;

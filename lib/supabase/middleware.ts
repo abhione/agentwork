@@ -49,7 +49,7 @@ export async function updateSession(req: NextRequest) {
 
   if (!user && !isPublicPath(pathname)) {
     // Unauthenticated API requests → 401 JSON
-    if (pathname.startsWith("/api/") || pathname.startsWith("/boxapi/")) {
+    if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

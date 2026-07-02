@@ -1,7 +1,8 @@
 /**
  * Box Claws API client
- * Talks to the agentbox-openclaw dashboard server (default: localhost:3457)
- * via Next.js rewrites (/boxapi/* → http://localhost:3457/api/*).
+ * Talks to the agentbox-openclaw dashboard server through the auth-gated
+ * server-side proxy at /api/boxclaws/* (which injects the platform's
+ * Anthropic key — clients never handle keys; compute bills to the platform).
  */
 
 export interface BoxRecord {
@@ -22,13 +23,10 @@ export interface DeployParams {
   name: string;
   persona?: string;
   model?: string;
-  anthropicApiKey: string;
   provider?: "docker" | "e2b";
-  telegramToken?: string;
-  telegramUserId?: string;
 }
 
-const BASE = "/boxapi";
+const BASE = "/api/boxclaws";
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -48,7 +46,7 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
 
 export async function checkHealth(): Promise<boolean> {
   try {
-    const res = await fetch("/boxhealth", { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${BASE}/health`, { signal: AbortSignal.timeout(5000) });
     return res.ok;
   } catch {
     return false;

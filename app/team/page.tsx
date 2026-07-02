@@ -116,15 +116,11 @@ export default function TeamPage() {
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <ServerOff className="h-10 w-10 text-amber-400" />
-            <h2 className="text-lg font-semibold">Box Claws infrastructure offline</h2>
+            <h2 className="text-lg font-semibold">Workspace infrastructure offline</h2>
             <p className="max-w-md text-sm text-muted-foreground">
-              The Box Claws API isn&apos;t reachable at{" "}
-              <code className="rounded bg-secondary px-1.5 py-0.5">localhost:3457</code>. Start it
-              from the agentbox-openclaw repo to see and manage your hired agents.
+              Your hired agents&apos; workspaces are temporarily unreachable. They&apos;ll
+              reappear here automatically once the infrastructure is back — no action needed.
             </p>
-            <code className="rounded-lg bg-secondary px-4 py-2 text-xs">
-              cd ~/Developer/agentbox-openclaw && ./start.sh
-            </code>
           </CardContent>
         </Card>
       )}
