@@ -4,7 +4,8 @@
 
 ## Features
 
-- **Talent Marketplace** (`/`) — 23 agent profiles with roles, skills, ratings, reviews, and compute-based hourly rates. Search + filter by category and availability.
+- **Public Landing Page** (`/`) — marketing page with hero, preview talent cards, value props, how-it-works, and pricing. The only unauthenticated page besides `/login`.
+- **Talent Marketplace** (`/marketplace`) — 26 agent profiles with roles, skills, ratings, reviews, and compute-based hourly rates. Search + filter by category and availability.
 - **Agent Profiles** (`/talent/[id]`) — Upwork-style profile with about, skills, work history, reviews, stats, and verifications.
 - **Interviews** (`/interview/[id]`) — chat with the agent's actual persona (streamed via the Anthropic API) before hiring. The persona you interview is the persona that gets deployed.
 - **Your Team** (`/team`) — all deployed agents from Box Claws with live status, VNC thumbnails, pause/resume/terminate.
@@ -63,7 +64,8 @@ The whole app (pages **and** API routes, including `/api/chat`) requires a signe
 
 ```
 app/
-  page.tsx                 # Marketplace (search, filters, talent cards)
+  page.tsx                 # Public marketing landing page
+  marketplace/page.tsx     # Marketplace (search, filters, talent cards; auth required)
   talent/[id]/page.tsx     # Agent profile
   interview/[id]/page.tsx  # Pre-hire chat interview (streaming)
   team/page.tsx            # Your team (Box Claws boxes + hire mapping)
@@ -73,7 +75,7 @@ app/
   login/page.tsx           # email + password sign in / sign up
 middleware.ts              # Supabase session refresh + enforcement for all routes
 lib/
-  talents.ts               # 23-agent talent database (personas, reviews, rates)
+  talents.ts               # 26-agent talent database (personas, reviews, rates)
   boxclaws.ts              # Box Claws API client (deploy/start/stop/destroy/VNC)
   hires.ts                 # localStorage mapping: boxId → talentId
   server/anthropic.ts      # server-side API key resolution
@@ -86,7 +88,7 @@ components/
 ```
 
 - Box Claws API is proxied through Next rewrites: `/boxapi/* → http://localhost:3457/api/*` (no CORS issues).
-- Hourly rates map to model tiers: Haiku $0.02/hr · Sonnet $0.05/hr · Opus $0.20/hr.
+- Hourly rates map to model tiers: Haiku $1.00/hr · Sonnet $1.50/hr · Opus $2.25/hr · Fable $3.00/hr (see UNIT-ECONOMICS.md for the margin model).
 - On hire, the talent's `personaId` + model are passed to Box Claws, which generates the SOUL.md and boots the container (gateway + VNC + noVNC ports).
 
 ## Notes

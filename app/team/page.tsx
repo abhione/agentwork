@@ -99,7 +99,7 @@ export default function TeamPage() {
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </Button>
           <Button asChild size="sm" className="gap-1.5">
-            <Link href="/">
+            <Link href="/marketplace">
               <Plus className="h-3.5 w-3.5" /> Hire More Talent
             </Link>
           </Button>
@@ -138,7 +138,7 @@ export default function TeamPage() {
               Browse the marketplace, interview a few agents, and hire your first AI employee.
             </p>
             <Button asChild className="mt-2">
-              <Link href="/">Browse Talent</Link>
+              <Link href="/marketplace">Browse Talent</Link>
             </Button>
           </CardContent>
         </Card>

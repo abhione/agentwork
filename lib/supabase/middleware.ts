@@ -5,7 +5,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/robots.txt", "/favicon.ico"];
+// "/" is the public marketing landing page. Everything else (marketplace,
+// talent profiles, interviews, team) stays behind auth.
+const PUBLIC_PATHS = ["/", "/login", "/robots.txt", "/favicon.ico"];
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
@@ -54,13 +56,18 @@ export async function updateSession(req: NextRequest) {
     // Unauthenticated page requests → redirect to /login with return path
     const loginUrl = new URL("/login", req.url);
     const next = pathname + req.nextUrl.search;
-    if (next !== "/") loginUrl.searchParams.set("next", next);
+    if (next !== "/marketplace") loginUrl.searchParams.set("next", next);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Signed-in users hitting /login → send home
+  // Signed-in users hitting /login → send to the marketplace (or ?next=)
   if (user && pathname === "/login") {
-    return NextResponse.redirect(new URL("/", req.url));
+    const nextParam = req.nextUrl.searchParams.get("next");
+    const target =
+      nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+        ? nextParam
+        : "/marketplace";
+    return NextResponse.redirect(new URL(target, req.url));
   }
 
   return res;

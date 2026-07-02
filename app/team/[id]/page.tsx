@@ -92,7 +92,7 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
     if (!box) return null;
     const created = box.createdAt ? new Date(box.createdAt) : new Date();
     const hours = Math.max(0.1, (Date.now() - created.getTime()) / 3600000);
-    const rate = talent?.hourlyRate ?? 0.05;
+    const rate = talent?.hourlyRate ?? 1.5;
     return {
       uptime:
         hours < 1

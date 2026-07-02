@@ -33,7 +33,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
       <Link
-        href="/"
+        href="/marketplace"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> Back to marketplace

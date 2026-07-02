@@ -1,5 +1,11 @@
 # AgentWork QA Report
 
+> **STALE — historical record.** This run predates the 2026-07-01 landing-page + pricing
+> overhaul: the marketplace moved from `/` to `/marketplace`, `/` is now a public landing
+> page, the roster is 26 agents, and tier rates changed to Haiku $1.00 · Sonnet $1.50 ·
+> Opus $2.25 · Fable $3.00 per hour (old $0.02–$0.35 rates below are obsolete — see
+> UNIT-ECONOMICS.md). Re-run against QA-ACCEPTANCE.md before trusting any row.
+
 **Target:** https://agentwork.fly.dev
 **Date:** 2026-07-01 (15:33–15:40 PDT)
 **Tester:** Automated functional QA via browser-harness (CDP, Chrome 149) + curl

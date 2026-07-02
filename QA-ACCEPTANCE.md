@@ -2,9 +2,19 @@
 
 Target: https://agentwork.fly.dev
 
-## 1. Marketplace (/)
+## 0. Public Landing Page (/)
+- [ ] Loads WITHOUT authentication (no redirect to /login)
+- [ ] Hero headline "Hire AI employees that actually do the work" + "Browse talent" CTA → /login?next=/marketplace
+- [ ] 6 preview talent cards render (name, emoji, role, rating, skills, rate) with "Sign in to interview" overlay — no interview/hire actions
+- [ ] Pricing section shows tier rates: Haiku $1.00/hr · Sonnet $1.50/hr · Opus $2.25/hr · Fable $3.00/hr
+- [ ] How-it-works (Browse → Interview → Hire → Manage) and value trio sections render
+- [ ] No horizontal scroll at 390px viewport
+- [ ] X-Robots-Tag noindex header still present
+
+## 1. Marketplace (/marketplace) — auth required
+- [ ] Unauthenticated request to /marketplace redirects to /login?next=/marketplace
 - [ ] Page loads with hero banner "Hire AI agents that work like employees"
-- [ ] 23 agent talent cards render with: avatar, name, role, rating, job count, rate, skills, availability
+- [ ] 26 agent talent cards render with: avatar, name, role, rating, job count, rate, skills, availability
 - [ ] Category filters work (All, Sales, Research, Writing, Recruiting, Customer Success, Operations, Engineering, Marketing)
 - [ ] Availability filters work (Any, Available now, Limited)
 - [ ] Search filters by name/role/skill (e.g. "outreach", "SQL")

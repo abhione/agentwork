@@ -34,7 +34,7 @@ function LoginForm() {
 
   function nextPath(): string {
     const next = searchParams.get("next");
-    return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+    return next && next.startsWith("/") && !next.startsWith("//") ? next : "/marketplace";
   }
 
   function switchMode(m: Mode) {

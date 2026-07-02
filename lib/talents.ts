@@ -62,11 +62,17 @@ export const CATEGORIES = [
   "Executive Support",
 ] as const;
 
+/**
+ * Hourly billing rates per model tier ($/hr of active agent work).
+ * Derived from real API economics — see UNIT-ECONOMICS.md.
+ * Rates assume platform-managed prompt caching; each tier carries
+ * positive gross margin at expected token consumption.
+ */
 export const TIER_RATES: Record<ModelTier, number> = {
-  haiku: 0.02,
-  sonnet: 0.05,
-  opus: 0.2,
-  fable: 0.35,
+  haiku: 1.0,
+  sonnet: 1.5,
+  opus: 2.25,
+  fable: 3.0,
 };
 
 export const TIER_MODELS: Record<ModelTier, string> = {

@@ -32,7 +32,7 @@ export default async function RootLayout({
       <body className="min-h-screen antialiased">
         <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href={user ? "/marketplace" : "/"} className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/15 ring-1 ring-emerald-500/30">
                 <Briefcase className="h-5 w-5 text-emerald-400" />
               </div>
@@ -43,22 +43,45 @@ export default async function RootLayout({
                 </span>
               </div>
             </Link>
-            <nav className="flex items-center gap-1">
-              <Link
-                href="/"
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              >
-                Find Talent
-              </Link>
-              <Link
-                href="/team"
-                className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              >
-                <Users className="h-4 w-4" />
-                Your Team
-              </Link>
-              <LogoutButton email={user?.email} />
-            </nav>
+            {user ? (
+              <nav className="flex items-center gap-1">
+                <Link
+                  href="/marketplace"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  Find Talent
+                </Link>
+                <Link
+                  href="/team"
+                  className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  <Users className="h-4 w-4" />
+                  Your Team
+                </Link>
+                <LogoutButton email={user?.email} />
+              </nav>
+            ) : (
+              <nav className="flex items-center gap-1">
+                <Link
+                  href="/#how-it-works"
+                  className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:inline-block"
+                >
+                  How it works
+                </Link>
+                <Link
+                  href="/#pricing"
+                  className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:inline-block"
+                >
+                  Pricing
+                </Link>
+                <Link
+                  href="/login?next=%2Fmarketplace"
+                  className="ml-1 rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  Sign in
+                </Link>
+              </nav>
+            )}
           </div>
         </header>
         <main>{children}</main>
