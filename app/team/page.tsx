@@ -84,13 +84,13 @@ export default function TeamPage() {
   const running = members.filter((m) => m.box.state === "running").length;
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="flex items-center gap-2.5 text-2xl font-bold">
+          <h1 className="flex items-center gap-2.5 font-display text-2xl font-bold tracking-[-0.02em]">
             <Users className="h-6 w-6 text-emerald-400" /> Your Team
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 font-mono text-xs tracking-wide text-muted-foreground">
             {members.length} agent{members.length === 1 ? "" : "s"} hired · {running} working now
           </p>
         </div>
@@ -130,9 +130,11 @@ export default function TeamPage() {
       )}
 
       {!loading && apiUp && members.length === 0 && (
-        <Card className="border-dashed">
+        <Card className="border-dashed border-white/10">
           <CardContent className="flex flex-col items-center gap-3 py-20 text-center">
-            <Users className="h-10 w-10 text-muted-foreground" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
+              <Users className="h-7 w-7 text-emerald-400/70" />
+            </div>
             <h2 className="text-lg font-semibold">No hires yet</h2>
             <p className="max-w-md text-sm text-muted-foreground">
               Browse the marketplace, interview a few agents, and hire your first AI employee.
@@ -152,8 +154,9 @@ export default function TeamPage() {
             <Card
               key={box.id}
               className={cn(
-                "border-border/60 transition-colors",
-                isRunning && "border-emerald-500/30"
+                "transition-all duration-300 hover:-translate-y-0.5",
+                isRunning &&
+                  "border-emerald-500/30 shadow-[0_0_32px_-12px_rgba(16,185,129,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]"
               )}
             >
               <CardContent className="p-5">
@@ -184,7 +187,9 @@ export default function TeamPage() {
                           {isRunning ? "● Working" : box.state === "stopped" ? "Paused" : box.state}
                         </Badge>
                         {talent && (
-                          <span className="text-xs text-emerald-400">{formatRate(talent.hourlyRate)}</span>
+                          <span className="font-mono text-xs text-emerald-400">
+                            {formatRate(talent.hourlyRate)}
+                          </span>
                         )}
                       </div>
                     </div>

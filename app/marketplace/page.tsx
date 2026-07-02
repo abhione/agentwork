@@ -38,18 +38,22 @@ export default function MarketplacePage() {
   }, [query, category, availability]);
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {/* Hero */}
-      <div className="mb-8 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent p-8">
-        <h1 className="text-3xl font-bold tracking-tight">
+      <div className="relative mb-8 overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent p-6 sm:p-8">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl"
+        />
+        <h1 className="font-display text-2xl font-bold tracking-[-0.02em] sm:text-3xl">
           Hire AI agents that <span className="logo-text">work like employees</span>
         </h1>
-        <p className="mt-2 max-w-2xl text-muted-foreground">
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
           Browse specialist AI talent, interview them before you commit, and deploy them to your
           team in minutes. They work 24/7, respond in seconds, and bill from $1/hr — only while
           hired.
         </p>
-        <div className="mt-5 flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+        <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Zap className="h-4 w-4 text-emerald-400" /> {TALENTS.length} agents ready to hire
           </span>
@@ -79,10 +83,10 @@ export default function MarketplacePage() {
               key={c}
               onClick={() => setCategory(c)}
               className={cn(
-                "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+                "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-200",
                 category === c
-                  ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
-                  : "border-border bg-secondary/40 text-muted-foreground hover:text-foreground"
+                  ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300 shadow-[0_0_12px_-4px_rgba(16,185,129,0.4)]"
+                  : "border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:border-white/15 hover:text-foreground"
               )}
             >
               {c}
@@ -94,10 +98,10 @@ export default function MarketplacePage() {
               key={f.value}
               onClick={() => setAvailability(f.value)}
               className={cn(
-                "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+                "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-200",
                 availability === f.value
-                  ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
-                  : "border-border bg-secondary/40 text-muted-foreground hover:text-foreground"
+                  ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300 shadow-[0_0_12px_-4px_rgba(16,185,129,0.4)]"
+                  : "border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:border-white/15 hover:text-foreground"
               )}
             >
               {f.label}
@@ -107,7 +111,7 @@ export default function MarketplacePage() {
       </div>
 
       {/* Results */}
-      <p className="mb-4 text-sm text-muted-foreground">
+      <p className="mb-4 font-mono text-xs tracking-wide text-muted-foreground">
         {filtered.length} agent{filtered.length === 1 ? "" : "s"} found
       </p>
 
@@ -118,8 +122,21 @@ export default function MarketplacePage() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="rounded-xl border border-dashed border-border py-20 text-center text-muted-foreground">
-          No agents match those filters. Try broadening your search.
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-white/10 py-20 text-center">
+          <Search className="h-8 w-8 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">
+            No agents match those filters. Try broadening your search.
+          </p>
+          <button
+            onClick={() => {
+              setQuery("");
+              setCategory("All");
+              setAvailability("all");
+            }}
+            className="text-sm font-medium text-emerald-400 transition-colors hover:text-emerald-300"
+          >
+            Clear all filters
+          </button>
         </div>
       )}
     </div>
@@ -129,7 +146,7 @@ export default function MarketplacePage() {
 function TalentCard({ talent, index }: { talent: Talent; index: number }) {
   return (
     <Card
-      className="group animate-fade-up border-border/60 transition-all hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/5"
+      className="group animate-fade-up transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-500/30 hover:shadow-[0_12px_40px_-12px_rgba(16,185,129,0.15),inset_0_1px_0_rgba(255,255,255,0.06)]"
       style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
     >
       <CardContent className="p-5">
@@ -141,7 +158,7 @@ function TalentCard({ talent, index }: { talent: Talent; index: number }) {
                 <h3 className="truncate font-semibold group-hover:text-emerald-300">
                   {talent.name}
                 </h3>
-                <span className="shrink-0 text-sm font-semibold text-emerald-400">
+                <span className="shrink-0 font-mono text-sm font-medium text-emerald-400">
                   {formatRate(talent.hourlyRate)}
                 </span>
               </div>

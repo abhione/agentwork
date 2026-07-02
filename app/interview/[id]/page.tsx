@@ -90,8 +90,8 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
       {/* Interview header */}
-      <div className="border-b border-border bg-card/50">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-3">
+      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <Link href={`/talent/${talent.id}`} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
@@ -100,7 +100,10 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-semibold">{talent.name}</h1>
-                <Badge variant="secondary" className="text-[10px]">
+                <Badge
+                  variant="secondary"
+                  className="border-emerald-500/25 bg-emerald-500/10 font-mono text-[10px] text-emerald-300"
+                >
                   Interview Mode
                 </Badge>
               </div>
@@ -110,23 +113,27 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
                 <RatingStars rating={talent.rating} size={10} />
                 <span>{talent.rating}</span>
                 <span>·</span>
-                <span className="text-emerald-400">{formatRate(talent.hourlyRate)}</span>
+                <span className="font-mono text-emerald-400">{formatRate(talent.hourlyRate)}</span>
               </div>
             </div>
           </div>
-          <Button onClick={() => setHireOpen(true)} className="gap-2 shadow-lg shadow-emerald-500/20">
-            <Rocket className="h-4 w-4" /> Hire This Agent
+          <Button onClick={() => setHireOpen(true)} className="gap-2">
+            <Rocket className="h-4 w-4" />
+            <span className="hidden sm:inline">Hire This Agent</span>
+            <span className="sm:hidden">Hire</span>
           </Button>
         </div>
       </div>
 
       {/* Messages */}
       <div ref={scrollRef} className="chat-scroll flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl px-6 py-6">
+        <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
           {messages.length === 0 && (
-            <div className="py-10 text-center">
+            <div className="animate-fade-up py-10 text-center">
               <TalentAvatar id={talent.id} emoji={talent.emoji} size="lg" className="mx-auto" />
-              <h2 className="mt-4 text-xl font-semibold">Interview {talent.name.split(" ")[0]}</h2>
+              <h2 className="mt-4 font-display text-xl font-semibold tracking-tight">
+                Interview {talent.name.split(" ")[0]}
+              </h2>
               <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
                 Chat with {talent.name.split(" ")[0]} before hiring — the same persona you&apos;ll
                 get once deployed. Ask about approach, working style, or anything else.
@@ -136,7 +143,7 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
                   <button
                     key={q}
                     onClick={() => send(q)}
-                    className="flex items-center gap-2 rounded-lg border border-border bg-secondary/40 px-4 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:border-emerald-500/40 hover:text-foreground"
+                    className="flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.02] px-4 py-2.5 text-left text-sm text-muted-foreground transition-all duration-200 hover:border-emerald-500/40 hover:bg-emerald-500/[0.04] hover:text-foreground"
                   >
                     <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
                     {q}
@@ -150,17 +157,20 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
             {messages.map((m, i) => (
               <div
                 key={i}
-                className={cn("flex gap-3", m.role === "user" ? "justify-end" : "justify-start")}
+                className={cn(
+                  "flex animate-fade-up gap-3",
+                  m.role === "user" ? "justify-end" : "justify-start"
+                )}
               >
                 {m.role === "assistant" && (
                   <TalentAvatar id={talent.id} emoji={talent.emoji} size="sm" className="mt-0.5 h-8 w-8 text-base" />
                 )}
                 <div
                   className={cn(
-                    "max-w-[75%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+                    "max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed sm:max-w-[75%]",
                     m.role === "user"
-                      ? "rounded-br-sm bg-emerald-600 text-white"
-                      : "rounded-bl-sm bg-secondary text-foreground"
+                      ? "rounded-br-sm bg-emerald-600 text-white shadow-[0_2px_12px_-4px_rgba(16,185,129,0.4)]"
+                      : "rounded-bl-sm border border-white/[0.05] bg-secondary/90 text-foreground"
                   )}
                 >
                   {m.content || (
@@ -182,8 +192,8 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Composer */}
-      <div className="border-t border-border bg-card/50">
-        <div className="mx-auto flex max-w-4xl items-end gap-3 px-6 py-4">
+      <div className="border-t border-border bg-card/50 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-4xl items-end gap-3 px-4 py-4 sm:px-6">
           <textarea
             ref={inputRef}
             value={input}
@@ -191,7 +201,7 @@ export default function InterviewPage({ params }: { params: Promise<{ id: string
             onKeyDown={handleKeyDown}
             rows={1}
             placeholder={`Ask ${talent.name.split(" ")[0]} anything…`}
-            className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-input bg-background px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
+            className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-input bg-white/[0.02] px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-emerald-500/40 focus:ring-1 focus:ring-ring"
           />
           <Button
             onClick={() => send(input)}

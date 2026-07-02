@@ -90,7 +90,7 @@ function LoginForm() {
 
   if (awaitingConfirm) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-6">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 sm:px-6">
         <Card className="w-full max-w-sm animate-fade-up">
           <CardHeader className="items-center text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30">
@@ -120,13 +120,17 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-6">
-      <Card className="w-full max-w-sm animate-fade-up">
+    <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden px-4 sm:px-6">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-0 h-[360px] w-[560px] -translate-x-1/2 rounded-full bg-emerald-500/[0.07] blur-[100px]"
+      />
+      <Card className="relative w-full max-w-sm animate-fade-up">
         <CardHeader className="items-center text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 shadow-[0_0_24px_-8px_rgba(16,185,129,0.5)] ring-1 ring-emerald-500/30">
             <Briefcase className="h-6 w-6 text-emerald-400" />
           </div>
-          <CardTitle className="text-xl">
+          <CardTitle className="font-display text-xl tracking-tight">
             {mode === "signin" ? "Sign in to" : "Join"} <span className="logo-text">AgentWork</span>
           </CardTitle>
           <CardDescription>

@@ -31,24 +31,24 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
   if (!talent) notFound();
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <Link
         href="/marketplace"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        className="group mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to marketplace
+        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back to marketplace
       </Link>
 
       {/* Header card */}
-      <Card className="mb-6 overflow-hidden border-border/60">
-        <div className="h-20 bg-gradient-to-r from-emerald-500/20 via-emerald-500/5 to-transparent" />
+      <Card className="mb-6 animate-fade-up overflow-hidden">
+        <div className="h-24 bg-[radial-gradient(ellipse_80%_120%_at_20%_0%,rgba(16,185,129,0.22),transparent_60%)]" />
         <CardContent className="-mt-10 p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-end gap-4">
               <TalentAvatar id={talent.id} emoji={talent.emoji} size="xl" className="ring-4 ring-background" />
               <div className="pb-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-bold">{talent.name}</h1>
+                  <h1 className="font-display text-2xl font-bold tracking-[-0.02em]">{talent.name}</h1>
                   {talent.badges.includes("Top Rated Plus") && (
                     <Badge className="bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20">
                       <Award className="mr-1 h-3 w-3" /> Top Rated Plus
@@ -73,7 +73,8 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
                 </Link>
               </Button>
               <Button className="gap-2" onClick={() => setHireOpen(true)}>
-                <Rocket className="h-4 w-4" /> Hire — {formatRate(talent.hourlyRate)}
+                <Rocket className="h-4 w-4" /> Hire —{" "}
+                <span className="font-mono">{formatRate(talent.hourlyRate)}</span>
               </Button>
             </div>
           </div>
@@ -84,7 +85,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
         {/* Left column */}
         <div className="space-y-6 lg:col-span-2">
           {/* About */}
-          <Card className="border-border/60">
+          <Card>
             <CardHeader>
               <CardTitle className="text-lg">About</CardTitle>
             </CardHeader>
@@ -97,7 +98,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
           </Card>
 
           {/* Skills */}
-          <Card className="border-border/60">
+          <Card>
             <CardHeader>
               <CardTitle className="text-lg">Skills</CardTitle>
             </CardHeader>
@@ -111,7 +112,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
           </Card>
 
           {/* Work history */}
-          <Card className="border-border/60">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Briefcase className="h-4 w-4 text-emerald-400" /> Work History
@@ -142,7 +143,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
           </Card>
 
           {/* Reviews */}
-          <Card className="border-border/60">
+          <Card>
             <CardHeader>
               <CardTitle className="text-lg">Client Reviews</CardTitle>
             </CardHeader>
@@ -168,7 +169,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
 
         {/* Right column — stats */}
         <div className="space-y-6">
-          <Card className="border-border/60">
+          <Card>
             <CardHeader>
               <CardTitle className="text-lg">Stats</CardTitle>
             </CardHeader>
@@ -186,7 +187,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
             </CardContent>
           </Card>
 
-          <Card className="border-border/60">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Globe className="h-4 w-4 text-emerald-400" /> Languages
@@ -201,7 +202,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ id: st
             </CardContent>
           </Card>
 
-          <Card className="border-border/60">
+          <Card>
             <CardHeader>
               <CardTitle className="text-lg">Verifications</CardTitle>
             </CardHeader>
@@ -258,7 +259,7 @@ function StatRow({
         {icon}
         {label}
       </span>
-      <span className={highlight ? "font-semibold text-emerald-400" : "font-medium"}>{value}</span>
+      <span className={highlight ? "font-mono font-medium text-emerald-400" : "font-medium"}>{value}</span>
     </div>
   );
 }

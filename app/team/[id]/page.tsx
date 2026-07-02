@@ -198,7 +198,7 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
   const displayName = talent?.name || box.name;
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -215,7 +215,7 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold">{displayName}</h1>
+            <h1 className="font-display text-xl font-bold tracking-tight">{displayName}</h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>{talent?.role || box.config?.persona || "Custom Agent"}</span>
               <Badge
@@ -224,7 +224,9 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
               >
                 {isRunning ? "● Working" : "Paused"}
               </Badge>
-              {talent && <span className="text-emerald-400">{formatRate(talent.hourlyRate)}</span>}
+              {talent && (
+                <span className="font-mono text-emerald-400">{formatRate(talent.hourlyRate)}</span>
+              )}
             </div>
           </div>
         </div>
@@ -289,7 +291,7 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         {/* VNC viewer — 2 cols */}
-        <Card className="border-border/60 xl:col-span-2">
+        <Card className="xl:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Monitor className="h-4 w-4 text-emerald-400" /> Live Workspace
@@ -354,7 +356,7 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
         </Card>
 
         {/* Chat panel */}
-        <Card className="flex h-[640px] flex-col border-border/60">
+        <Card className="flex h-[640px] flex-col">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Message {displayName.split(" ")[0]}</CardTitle>
           </CardHeader>
@@ -427,13 +429,13 @@ function MetricCard({
   accent?: boolean;
 }) {
   return (
-    <Card className="border-border/60">
+    <Card>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {icon}
           {label}
         </div>
-        <p className={cn("mt-1.5 text-xl font-bold", accent && "text-emerald-400")}>{value}</p>
+        <p className={cn("mt-1.5 font-mono text-xl font-medium tracking-tight", accent && "text-emerald-400")}>{value}</p>
       </CardContent>
     </Card>
   );
