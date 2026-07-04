@@ -73,8 +73,13 @@ supabase db remote commit --project-ref sebsnowworhrqqyschao
 
 **Option 2: Browser**
 1. Go to https://supabase.com/dashboard
-2. Login with `abhi@sequoiatalent.com` account
-3. Select "firebird" organization → "agentwork" project
+2. Click "Continue with GitHub"
+3. Login to GitHub as `abhione` (NOT `abhirupbhattacharya-sequoia`)
+4. Select "firebird" organization → "agentwork" project
+
+> ⚠️ **Important:** The `abhione` GitHub account is linked to `abhi@sequoiatalent.com` Supabase.
+> The `abhirupbhattacharya-sequoia` GitHub account is linked to a different Supabase account that does NOT have access to agentwork.
+> If you accidentally login with the wrong GitHub account, you'll see "You do not have access to this project".
 
 ## All Supabase Projects (firebird org)
 
