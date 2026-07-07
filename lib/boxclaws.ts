@@ -26,6 +26,10 @@ export interface DeployParams {
   persona?: string;
   model?: string;
   provider?: "docker" | "e2b";
+  /** Custom agent files generated from onboarding (SOUL.md, AGENTS.md, etc.) */
+  agentFiles?: Record<string, string>;
+  /** Raw onboarding answers (stored for re-deployment) */
+  onboardingAnswers?: Record<string, string | string[]>;
 }
 
 const BASE = "/api/boxclaws";
