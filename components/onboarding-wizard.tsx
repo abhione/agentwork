@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   ChevronRight,
+  Globe,
   HelpCircle,
   Loader2,
   Rocket,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 import {
   Dialog,
@@ -68,11 +70,21 @@ export function OnboardingWizard({
   const [deploying, setDeploying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Website auto-fill state
+  const [siteStatus, setSiteStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [siteNote, setSiteNote] = useState<string | null>(null);
+  const [prefilled, setPrefilled] = useState<Set<string>>(new Set());
+  const analyzedUrlRef = useRef<string>("");
+
   // Reset state when dialog opens
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
       setStep(1);
       setAnswers({});
+      setSiteStatus("idle");
+      setSiteNote(null);
+      setPrefilled(new Set());
+      analyzedUrlRef.current = "";
       setWorkspaceName(
         `${talent.name.split(" ")[0].toLowerCase()}-${talent.role
           .split(" ")[0]
@@ -88,7 +100,64 @@ export function OnboardingWizard({
 
   const updateAnswer = (questionId: string, value: string | string[]) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    // Once the user edits an auto-filled answer, it's theirs.
+    setPrefilled((prev) => {
+      if (!prev.has(questionId)) return prev;
+      const next = new Set(prev);
+      next.delete(questionId);
+      return next;
+    });
   };
+
+  const analyzeSite = useCallback(
+    async (rawUrl: string) => {
+      const url = rawUrl.trim();
+      if (!url || url === analyzedUrlRef.current) return;
+      // Needs at least a dot to look like a domain
+      if (!/\S+\.\S{2,}/.test(url)) return;
+      analyzedUrlRef.current = url;
+      setSiteStatus("loading");
+      setSiteNote(null);
+      try {
+        const res = await fetch("/api/onboarding/analyze-site", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, category: talent.category }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Analysis failed");
+
+        const fields = (data.fields || {}) as Record<string, string | string[]>;
+        const filledIds: string[] = [];
+        const merged: OnboardingAnswers = {};
+        for (const [id, value] of Object.entries(fields)) {
+          const existing = answers[id];
+          const hasUserValue = Array.isArray(existing)
+            ? existing.length > 0
+            : !!existing?.toString().trim();
+          // Don't clobber answers the user typed themselves
+          if (hasUserValue && !prefilled.has(id)) continue;
+          merged[id] = value;
+          filledIds.push(id);
+        }
+        setAnswers((prev) => ({ ...prev, ...merged }));
+        if (filledIds.length > 0) {
+          setPrefilled(new Set(filledIds));
+          setSiteStatus("done");
+          setSiteNote(
+            `Pre-filled ${filledIds.length} answer${filledIds.length === 1 ? "" : "s"} from your website — review and edit anything below.`
+          );
+        } else {
+          setSiteStatus("error");
+          setSiteNote("Couldn't find much on that site — fill in the answers manually.");
+        }
+      } catch {
+        setSiteStatus("error");
+        setSiteNote("Couldn't read that site — no worries, just fill in the answers below.");
+      }
+    },
+    [talent.category, prefilled, answers]
+  );
 
   const toggleMultiSelect = (questionId: string, value: string) => {
     const current = (answers[questionId] as string[]) || [];
@@ -141,6 +210,8 @@ export function OnboardingWizard({
   const renderQuestion = (q: OnboardingQuestion) => {
     const value = answers[q.id];
 
+    const isPrefilled = prefilled.has(q.id);
+
     return (
       <div key={q.id} className="space-y-2">
         <div className="flex items-center gap-2">
@@ -148,6 +219,14 @@ export function OnboardingWizard({
             {q.label}
             {q.required && <span className="ml-1 text-red-400">*</span>}
           </Label>
+          {isPrefilled && (
+            <Badge
+              variant="outline"
+              className="h-5 gap-1 border-emerald-500/40 bg-emerald-500/10 px-1.5 text-[10px] font-medium text-emerald-300"
+            >
+              <Sparkles className="h-2.5 w-2.5" /> Auto-filled
+            </Badge>
+          )}
           {q.helpText && (
             <TooltipProvider>
               <Tooltip>
@@ -172,13 +251,65 @@ export function OnboardingWizard({
         )}
 
         {q.type === "url" && (
-          <Input
-            id={q.id}
-            type="url"
-            value={(value as string) || ""}
-            onChange={(e) => updateAnswer(q.id, e.target.value)}
-            placeholder={q.placeholder}
-          />
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id={q.id}
+                  type="url"
+                  value={(value as string) || ""}
+                  onChange={(e) => updateAnswer(q.id, e.target.value)}
+                  onBlur={(e) => {
+                    if (q.id === "website_url") analyzeSite(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && q.id === "website_url") {
+                      e.preventDefault();
+                      analyzeSite((value as string) || "");
+                    }
+                  }}
+                  placeholder={q.placeholder}
+                  className="pl-9"
+                  disabled={siteStatus === "loading"}
+                />
+              </div>
+              {q.id === "website_url" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    analyzedUrlRef.current = ""; // allow re-run
+                    analyzeSite((value as string) || "");
+                  }}
+                  disabled={siteStatus === "loading" || !((value as string) || "").trim()}
+                  className="shrink-0 gap-1.5 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200"
+                >
+                  {siteStatus === "loading" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  Auto-fill
+                </Button>
+              )}
+            </div>
+            {q.id === "website_url" && siteStatus === "loading" && (
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-300">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Reading your website… this takes a few seconds.
+              </div>
+            )}
+            {q.id === "website_url" && siteStatus === "done" && siteNote && (
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+                <Check className="h-3.5 w-3.5 shrink-0" />
+                {siteNote}
+              </div>
+            )}
+            {q.id === "website_url" && siteStatus === "error" && siteNote && (
+              <p className="px-1 text-xs text-muted-foreground">{siteNote}</p>
+            )}
+          </div>
         )}
 
         {q.type === "textarea" && (

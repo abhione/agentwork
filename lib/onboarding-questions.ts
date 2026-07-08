@@ -35,6 +35,15 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   
   // Universal job context
   {
+    id: 'website_url',
+    step: 1,
+    categories: [],
+    type: 'url',
+    label: 'Company website',
+    placeholder: 'https://acme.com',
+    helpText: "Drop your URL and I'll read your site to pre-fill the answers below.",
+  },
+  {
     id: 'company_name',
     step: 1,
     categories: [],
@@ -52,14 +61,6 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
     placeholder: 'We make AI-powered scheduling software for healthcare clinics...',
     required: true,
     helpText: "This helps me understand what I'm working on.",
-  },
-  {
-    id: 'website_url',
-    step: 1,
-    categories: [],
-    type: 'url',
-    label: 'Company website',
-    placeholder: 'https://acme.com',
   },
   
   // Sales-specific
