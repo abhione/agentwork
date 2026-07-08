@@ -3,10 +3,18 @@
  *
  * POST { url, category } → fetches the company website server-side, extracts
  * readable text, and asks the LLM to pre-fill the step-1 onboarding questions
- * for that persona category. Returns strict JSON: { fields: { questionId: value } }.
+ * for that persona category. Returns strict JSON:
+ * { fields: { questionId: value }, source: "website" | "knowledge" }.
  *
- * Only fields with clear evidence on the site are filled; everything is
- * editable by the user afterwards. The Anthropic key never leaves the server.
+ * Layered fallback:
+ *   1. Direct fetch with realistic browser headers. Bot-challenge pages
+ *      (Cloudflare "Just a moment…", Incapsula, Akamai) are detected and
+ *      treated as fetch failures even on HTTP 200.
+ *   2. If the site can't be read, ask the LLM to fill fields from what it
+ *      reliably knows about the company at that domain (source: "knowledge").
+ *
+ * Only fields with clear evidence are filled; everything is editable by the
+ * user afterwards. The Anthropic key never leaves the server.
  */
 import { NextRequest } from "next/server";
 import { lookup } from "dns/promises";
@@ -101,7 +109,40 @@ async function assertSafeUrl(raw: string): Promise<URL> {
 // Fetch + HTML → text
 // ---------------------------------------------------------------------------
 
-async function fetchPage(url: string, timeoutMs: number): Promise<string | null> {
+/** Markers that indicate a bot-protection interstitial rather than real content. */
+const CHALLENGE_MARKERS = [
+  "just a moment",
+  "challenges.cloudflare.com",
+  "cf-browser-verification",
+  "cf_chl_",
+  "attention required! | cloudflare",
+  "checking your browser before accessing",
+  "_incapsula_resource",
+  "incapsula incident",
+  "request unsuccessful. incapsula",
+  "akamai bot manager",
+  "reference #18.", // Akamai block reference pages
+  "ddos protection by",
+  "verify you are human",
+  "enable javascript and cookies to continue",
+];
+
+function looksLikeChallenge(html: string, status: number): boolean {
+  const head = html.slice(0, 8000).toLowerCase();
+  const marked = CHALLENGE_MARKERS.some((m) => head.includes(m));
+  if (marked) return true;
+  // Blocked statuses with tiny bodies are almost certainly bot walls
+  if ((status === 403 || status === 503 || status === 429) && html.length < 20000) return true;
+  return false;
+}
+
+interface FetchResult {
+  html: string;
+  status: number;
+  challenge: boolean;
+}
+
+async function fetchPage(url: string, timeoutMs: number): Promise<FetchResult | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -110,16 +151,28 @@ async function fetchPage(url: string, timeoutMs: number): Promise<string | null>
       redirect: "follow",
       headers: {
         "User-Agent": USER_AGENT,
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+        "Sec-Ch-Ua": '"Chromium";v="126", "Google Chrome";v="126", "Not.A/Brand";v="24"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"macOS"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
       },
     });
-    if (!res.ok) return null;
     const type = res.headers.get("content-type") || "";
-    if (!type.includes("html") && !type.includes("text")) return null;
+    if (res.ok && !type.includes("html") && !type.includes("text")) return null;
     // Cap raw HTML read at ~1.5MB
-    const text = await res.text();
-    return text.slice(0, 1_500_000);
+    const text = (await res.text()).slice(0, 1_500_000);
+    const challenge = looksLikeChallenge(text, res.status);
+    if (!res.ok && !challenge) return null;
+    return { html: text, status: res.status, challenge };
   } catch {
     return null;
   } finally {
@@ -285,28 +338,19 @@ function fieldSpec(q: OnboardingQuestion): string {
   return `- "${q.id}" (${type}): ${q.label}${q.helpText ? ` — ${q.helpText}` : ""}${opts}`;
 }
 
-async function extractFields(
-  corpus: string,
-  questions: OnboardingQuestion[],
-  apiKey: string
-): Promise<Record<string, string | string[]>> {
-  const specs = questions.map(fieldSpec).join("\n");
+const SHARED_FIELD_RULES = `Return ONLY a JSON object (no markdown, no commentary). Keys are the question ids below; values are the answers.
 
-  const system = `You analyze a company's website text and pre-fill onboarding answers for an AI employee that the company is hiring.
-
-Return ONLY a JSON object (no markdown, no commentary). Keys are the question ids below; values are the answers.
-
-Rules:
-- Only include a field if the website gives clear evidence for it. Omit (or set null) anything you'd have to guess.
 - Answers are written from the company's point of view, first person plural where natural ("We make…").
 - Keep text answers concise: 1-3 sentences for textareas, a few words for short text fields.
 - For select fields, the value MUST be exactly one of the listed option values.
-- For multiselect fields, the value MUST be an array of listed option values.
-- Never invent products, metrics, competitors, or customers not supported by the text.
+- For multiselect fields, the value MUST be an array of listed option values.`;
 
-Fields:
-${specs}`;
-
+async function callClaudeForFields(
+  system: string,
+  userMessage: string,
+  questions: OnboardingQuestion[],
+  apiKey: string
+): Promise<Record<string, string | string[]>> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -319,12 +363,7 @@ ${specs}`;
       max_tokens: 1500,
       temperature: 0,
       system,
-      messages: [
-        {
-          role: "user",
-          content: `Website text:\n\n${corpus}\n\nReturn the JSON object now.`,
-        },
-      ],
+      messages: [{ role: "user", content: userMessage }],
     }),
   });
 
@@ -373,6 +412,52 @@ ${specs}`;
   return fields;
 }
 
+/** Layer 1: extract fields from fetched website text. */
+async function extractFields(
+  corpus: string,
+  questions: OnboardingQuestion[],
+  apiKey: string
+): Promise<Record<string, string | string[]>> {
+  const specs = questions.map(fieldSpec).join("\n");
+  const system = `You analyze a company's website text and pre-fill onboarding answers for an AI employee that the company is hiring.
+
+${SHARED_FIELD_RULES}
+- Only include a field if the website gives clear evidence for it. Omit (or set null) anything you'd have to guess.
+- Never invent products, metrics, competitors, or customers not supported by the text.
+
+Fields:
+${specs}`;
+  return callClaudeForFields(
+    system,
+    `Website text:\n\n${corpus}\n\nReturn the JSON object now.`,
+    questions,
+    apiKey
+  );
+}
+
+/** Layer 2: extract fields from the model's own knowledge of the company. */
+async function extractFieldsFromKnowledge(
+  url: URL,
+  questions: OnboardingQuestion[],
+  apiKey: string
+): Promise<Record<string, string | string[]>> {
+  const specs = questions.map(fieldSpec).join("\n");
+  const system = `The website at a given domain could not be read directly (bot protection). Based ONLY on what you reliably know about the company or organization that operates that domain, pre-fill onboarding answers for an AI employee that the company is hiring.
+
+${SHARED_FIELD_RULES}
+- Only fill fields you are confident about from your training knowledge of this specific organization; return null (or omit) otherwise. Well-known organizations (hospitals, health systems, universities, major brands, large companies) you likely know well.
+- If you don't recognize the organization behind this domain, return an empty JSON object {}. Never guess or invent facts, products, metrics, or customers.
+
+Fields:
+${specs}`;
+  return callClaudeForFields(
+    system,
+    `Company website domain: ${url.hostname}\nFull URL: ${url.toString()}\n\nReturn the JSON object now.`,
+    questions,
+    apiKey
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Route
 // ---------------------------------------------------------------------------
@@ -406,53 +491,76 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "No Anthropic API key configured" }, { status: 500 });
   }
 
-  // 1. Fetch homepage
-  const homepageHtml = await fetchPage(url.toString(), HOMEPAGE_TIMEOUT_MS);
-  if (!homepageHtml) {
-    return Response.json({ error: "Couldn't fetch that site" }, { status: 422 });
-  }
-
-  const pagesFetched: string[] = [url.toString()];
-  let corpus = `=== HOMEPAGE (${url.hostname}) ===\n${htmlToText(homepageHtml)}`;
-
-  // 2. Cheaply grab 1-2 obvious secondary pages if we have headroom
-  if (corpus.length < MAX_CORPUS_CHARS) {
-    const links = findSecondaryLinks(homepageHtml, url, 2);
-    const secondary = await Promise.all(links.map((l) => fetchPage(l, SECONDARY_TIMEOUT_MS)));
-    for (let i = 0; i < links.length; i++) {
-      const html = secondary[i];
-      if (!html) continue;
-      const text = htmlToText(html);
-      if (text.length < 100) continue;
-      corpus += `\n\n=== ${links[i]} ===\n${text}`;
-      pagesFetched.push(links[i]);
-      if (corpus.length >= MAX_CORPUS_CHARS) break;
-    }
-  }
-  corpus = corpus.slice(0, MAX_CORPUS_CHARS);
-
-  if (corpus.replace(/\s+/g, " ").length < 200) {
-    return Response.json(
-      { error: "The site didn't have enough readable content" },
-      { status: 422 }
-    );
-  }
-
-  // 3. Which questions can we fill? Step-1 (job context) for this category.
+  // Which questions can we fill? Step-1 (job context) for this category.
   const questions = getQuestionsForPersona(category || "Sales", 1).filter(
     (q) => !NON_INFERABLE.has(q.id)
   );
-  // Also let it infer brand voice / company culture style questions across categories
-  // only when they're part of this persona's question set (handled by the filter above).
 
+  // -------------------------------------------------------------------------
+  // Layer 1: read the website directly
+  // -------------------------------------------------------------------------
+  const homepage = await fetchPage(url.toString(), HOMEPAGE_TIMEOUT_MS);
+  const blocked = !homepage || homepage.challenge;
+
+  let corpus = "";
+  const pagesFetched: string[] = [];
+
+  if (!blocked && homepage) {
+    pagesFetched.push(url.toString());
+    corpus = `=== HOMEPAGE (${url.hostname}) ===\n${htmlToText(homepage.html)}`;
+
+    // Cheaply grab 1-2 obvious secondary pages if we have headroom
+    if (corpus.length < MAX_CORPUS_CHARS) {
+      const links = findSecondaryLinks(homepage.html, url, 2);
+      const secondary = await Promise.all(
+        links.map((l) => fetchPage(l, SECONDARY_TIMEOUT_MS))
+      );
+      for (let i = 0; i < links.length; i++) {
+        const page = secondary[i];
+        if (!page || page.challenge) continue;
+        const text = htmlToText(page.html);
+        if (text.length < 100) continue;
+        corpus += `\n\n=== ${links[i]} ===\n${text}`;
+        pagesFetched.push(links[i]);
+        if (corpus.length >= MAX_CORPUS_CHARS) break;
+      }
+    }
+    corpus = corpus.slice(0, MAX_CORPUS_CHARS);
+  }
+
+  const hasUsableCorpus = corpus.replace(/\s+/g, " ").length >= 200;
+
+  if (hasUsableCorpus) {
+    try {
+      const fields = await extractFields(corpus, questions, apiKey);
+      return Response.json({
+        fields,
+        source: "website",
+        meta: {
+          url: url.toString(),
+          pagesFetched,
+          chars: corpus.length,
+          fieldCount: Object.keys(fields).length,
+        },
+      });
+    } catch {
+      // Fall through to knowledge fallback below
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Layer 2: knowledge fallback — the site was unreachable, bot-protected,
+  // or had too little readable content. Fill from what the model knows.
+  // -------------------------------------------------------------------------
   try {
-    const fields = await extractFields(corpus, questions, apiKey);
+    const fields = await extractFieldsFromKnowledge(url, questions, apiKey);
     return Response.json({
       fields,
+      source: "knowledge",
       meta: {
         url: url.toString(),
         pagesFetched,
-        chars: corpus.length,
+        blocked,
         fieldCount: Object.keys(fields).length,
       },
     });

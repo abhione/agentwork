@@ -73,6 +73,7 @@ export function OnboardingWizard({
   // Website auto-fill state
   const [siteStatus, setSiteStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [siteNote, setSiteNote] = useState<string | null>(null);
+  const [fillSource, setFillSource] = useState<"website" | "knowledge">("website");
   const [prefilled, setPrefilled] = useState<Set<string>>(new Set());
   const analyzedUrlRef = useRef<string>("");
 
@@ -83,6 +84,7 @@ export function OnboardingWizard({
       setAnswers({});
       setSiteStatus("idle");
       setSiteNote(null);
+      setFillSource("website");
       setPrefilled(new Set());
       analyzedUrlRef.current = "";
       setWorkspaceName(
@@ -140,12 +142,16 @@ export function OnboardingWizard({
           merged[id] = value;
           filledIds.push(id);
         }
+        const source = data.source === "knowledge" ? "knowledge" : "website";
         setAnswers((prev) => ({ ...prev, ...merged }));
         if (filledIds.length > 0) {
           setPrefilled(new Set(filledIds));
+          setFillSource(source);
           setSiteStatus("done");
           setSiteNote(
-            `Pre-filled ${filledIds.length} answer${filledIds.length === 1 ? "" : "s"} from your website — review and edit anything below.`
+            source === "knowledge"
+              ? `✨ Filled ${filledIds.length} answer${filledIds.length === 1 ? "" : "s"} from what we know about this company — we couldn't read the site directly, so please verify.`
+              : `Pre-filled ${filledIds.length} answer${filledIds.length === 1 ? "" : "s"} from your website — review and edit anything below.`
           );
         } else {
           setSiteStatus("error");
@@ -222,9 +228,15 @@ export function OnboardingWizard({
           {isPrefilled && (
             <Badge
               variant="outline"
-              className="h-5 gap-1 border-emerald-500/40 bg-emerald-500/10 px-1.5 text-[10px] font-medium text-emerald-300"
+              className={cn(
+                "h-5 gap-1 px-1.5 text-[10px] font-medium",
+                fillSource === "knowledge"
+                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+              )}
             >
-              <Sparkles className="h-2.5 w-2.5" /> Auto-filled
+              <Sparkles className="h-2.5 w-2.5" />
+              {fillSource === "knowledge" ? "Our best guess — verify" : "Auto-filled"}
             </Badge>
           )}
           {q.helpText && (
@@ -301,7 +313,14 @@ export function OnboardingWizard({
               </div>
             )}
             {q.id === "website_url" && siteStatus === "done" && siteNote && (
-              <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+              <div
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs",
+                  fillSource === "knowledge"
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                )}
+              >
                 <Check className="h-3.5 w-3.5 shrink-0" />
                 {siteNote}
               </div>
