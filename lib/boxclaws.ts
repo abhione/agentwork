@@ -93,6 +93,24 @@ export async function execInBox(id: string, command: string[]): Promise<{ stdout
   });
 }
 
+/**
+ * Chat with a deployed box's live OpenClaw agent (real tools: browser, exec).
+ * Routes: client → /api/boxclaws (auth) → Box Claws server → box gateway
+ * /v1/chat/completions. The gateway token never leaves the server side.
+ */
+export async function chatWithBox(
+  id: string,
+  messages: { role: "user" | "assistant" | "system"; content: string }[]
+): Promise<string> {
+  const data = await jsonFetch<{ choices?: { message?: { content?: string } }[] }>(
+    `${BASE}/boxes/${encodeURIComponent(id)}/chat`,
+    { method: "POST", body: JSON.stringify({ messages }) }
+  );
+  const reply = data?.choices?.[0]?.message?.content;
+  if (!reply) throw new Error("Agent returned an empty reply");
+  return reply;
+}
+
 export function novncUrl(box: BoxRecord, opts?: { scale?: boolean }): string | null {
   // Hosted backend (Fly): server returns a ready-made public URL through its
   // token-guarded VNC proxy. Prefer it.

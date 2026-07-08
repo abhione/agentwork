@@ -28,6 +28,7 @@ import {
   startBox,
   stopBox,
   destroyBox,
+  chatWithBox,
   novncUrl,
   type BoxRecord,
 } from "@/lib/boxclaws";
@@ -126,31 +127,43 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
     return base;
   }, [box, isRunning, talent]);
 
+  // Chat routing: when the box is deployed and running, messages go to the
+  // REAL agent (its OpenClaw gateway, with browser/exec tools) via the
+  // auth-gated Box Claws proxy. The persona-only /api/chat preview is used
+  // only as a fallback when the agent isn't running.
+  const liveChat = !!box && box.state === "running";
+  const canChat = liveChat || !!talent;
+
   const send = async () => {
     const text = input.trim();
-    if (!text || streaming || !talent) return;
+    if (!text || streaming || !canChat) return;
     setInput("");
     const next: Msg[] = [...messages, { role: "user", content: text }];
     setMessages([...next, { role: "assistant", content: "" }]);
     setStreaming(true);
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ talentId: talent.id, messages: next }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `Request failed (${res.status})`);
-      }
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let acc = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        acc += decoder.decode(value, { stream: true });
-        setMessages([...next, { role: "assistant", content: acc }]);
+      if (liveChat && box) {
+        const reply = await chatWithBox(box.id, next);
+        setMessages([...next, { role: "assistant", content: reply }]);
+      } else if (talent) {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ talentId: talent.id, messages: next }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || `Request failed (${res.status})`);
+        }
+        const reader = res.body!.getReader();
+        const decoder = new TextDecoder();
+        let acc = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          acc += decoder.decode(value, { stream: true });
+          setMessages([...next, { role: "assistant", content: acc }]);
+        }
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
@@ -389,14 +402,20 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
         <Card className="flex h-[640px] flex-col">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Message {displayName.split(" ")[0]}</CardTitle>
+            {!liveChat && (
+              <p className="text-[11px] leading-snug text-amber-400/80">
+                Preview mode — agent not running. Replies are persona-only (no tools). Resume the
+                agent to chat with the live workspace.
+              </p>
+            )}
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col p-0">
             <div ref={chatRef} className="chat-scroll flex-1 space-y-3 overflow-y-auto px-4 pb-3">
               {messages.length === 0 && (
                 <p className="pt-8 text-center text-xs text-muted-foreground">
-                  {talent
+                  {canChat
                     ? `Check in with ${displayName.split(" ")[0]}, assign tasks, or ask for a status update.`
-                    : "Chat requires a talent profile linked to this agent."}
+                    : "Chat requires a running agent or a linked talent profile."}
                 </p>
               )}
               {messages.map((m, i) => (
@@ -427,14 +446,14 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
                   }
                 }}
                 rows={1}
-                disabled={!talent}
-                placeholder={talent ? "Send a message…" : "No linked talent profile"}
+                disabled={!canChat}
+                placeholder={canChat ? "Send a message…" : "Agent not running"}
                 className="max-h-24 min-h-[40px] flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring disabled:opacity-50"
               />
               <Button
                 size="icon"
                 onClick={send}
-                disabled={!input.trim() || streaming || !talent}
+                disabled={!input.trim() || streaming || !canChat}
                 className="h-10 w-10 shrink-0"
               >
                 {streaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
