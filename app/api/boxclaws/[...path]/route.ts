@@ -16,7 +16,7 @@
  * client-supplied key is discarded.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { resolveApiUser } from "@/lib/supabase/api-auth";
 
 const BOXCLAWS_URL = process.env.BOXCLAWS_URL || "http://localhost:3457";
 const TIMEOUT_MS = 15_000;
@@ -26,24 +26,17 @@ const DEPLOY_TIMEOUT_MS = 120_000;
 // Live-agent chat runs a real agent turn (tool use, browser) — allow minutes.
 const CHAT_TIMEOUT_MS = 240_000;
 
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
-}
-
 function upstreamUrl(path: string[]): string {
   if (path.length === 1 && path[0] === "health") return `${BOXCLAWS_URL}/health`;
   return `${BOXCLAWS_URL}/api/${path.map(encodeURIComponent).join("/")}`;
 }
 
 async function proxy(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  const user = await requireUser();
-  if (!user) {
+  const auth = await resolveApiUser(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const { user, supabase } = auth;
 
   const { path } = await params;
   if (!path?.length) {
@@ -61,6 +54,10 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
       isDeploy ? DEPLOY_TIMEOUT_MS : isChat ? CHAT_TIMEOUT_MS : TIMEOUT_MS
     ),
   };
+
+  // For chat turns: the last user message, persisted with the agent reply.
+  let chatUserMessage: string | null = null;
+  const chatBoxId = isChat ? path[1] : null;
 
   if (req.method !== "GET" && req.method !== "HEAD") {
     let body: Record<string, unknown> = {};
@@ -83,6 +80,23 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
       body = { ...body, anthropicApiKey: platformKey };
     }
 
+    // Chat call: pin a stable per-(account, box) session key. The box gateway's
+    // chat-completions endpoint is stateless per request by default; passing a
+    // stable OpenAI `user` value makes it reuse one agent session, so the agent
+    // remembers earlier messages in the thread. Never trust a client-supplied
+    // value (it could hijack another user's session on a shared gateway).
+    if (isChat && chatBoxId) {
+      body.user = `agentwork:${user.id}:${chatBoxId}`;
+      const msgs = Array.isArray(body.messages) ? (body.messages as unknown[]) : [];
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        const m = msgs[i] as { role?: string; content?: unknown };
+        if (m?.role === "user" && typeof m.content === "string" && m.content.trim()) {
+          chatUserMessage = m.content;
+          break;
+        }
+      }
+    }
+
     if (Object.keys(body).length > 0) init.body = JSON.stringify(body);
   }
 
@@ -98,6 +112,28 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
     } catch {
       // non-JSON (e.g. plain health "ok") passes through
     }
+    // Persist the completed live-chat turn server-side so the thread survives
+    // reloads even if the client disconnects before saving.
+    if (isChat && chatBoxId && res.ok) {
+      try {
+        const json = JSON.parse(text) as {
+          choices?: { message?: { content?: string } }[];
+        };
+        const reply = json?.choices?.[0]?.message?.content;
+        if (typeof reply === "string" && reply.trim()) {
+          const rows: { user_id: string; box_id: string; role: string; content: string }[] = [];
+          if (chatUserMessage) {
+            rows.push({ user_id: user.id, box_id: chatBoxId, role: "user", content: chatUserMessage });
+          }
+          rows.push({ user_id: user.id, box_id: chatBoxId, role: "assistant", content: reply });
+          const { error: saveErr } = await supabase.from("chat_messages").insert(rows);
+          if (saveErr) console.error("chat_messages insert failed:", saveErr.message);
+        }
+      } catch {
+        // streaming/non-JSON responses aren't persisted here
+      }
+    }
+
     return new NextResponse(sanitized, {
       status: res.status,
       headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },

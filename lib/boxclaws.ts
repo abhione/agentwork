@@ -97,6 +97,11 @@ export async function execInBox(id: string, command: string[]): Promise<{ stdout
  * Chat with a deployed box's live OpenClaw agent (real tools: browser, exec).
  * Routes: client → /api/boxclaws (auth) → Box Claws server → box gateway
  * /v1/chat/completions. The gateway token never leaves the server side.
+ *
+ * Continuity: the proxy pins a stable per-(account, box) session key, so the
+ * agent's OpenClaw session remembers the whole thread. We still send a short
+ * recent-history window so a fresh session (e.g. after a box redeploy) has
+ * context, but cap it to keep payloads bounded.
  */
 export async function chatWithBox(
   id: string,
@@ -104,7 +109,7 @@ export async function chatWithBox(
 ): Promise<string> {
   const data = await jsonFetch<{ choices?: { message?: { content?: string } }[] }>(
     `${BASE}/boxes/${encodeURIComponent(id)}/chat`,
-    { method: "POST", body: JSON.stringify({ messages }) }
+    { method: "POST", body: JSON.stringify({ messages: messages.slice(-12) }) }
   );
   const reply = data?.choices?.[0]?.message?.content;
   if (!reply) throw new Error("Agent returned an empty reply");

@@ -58,9 +58,52 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
 
   // chat state
   const [messages, setMessages] = useState<Msg[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+
+  // Persisted thread: load prior messages for this (account, box) thread so
+  // the conversation survives reloads and devices.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/chat/history?boxId=${encodeURIComponent(id)}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as { messages?: Msg[] };
+        if (!cancelled && Array.isArray(data.messages) && data.messages.length > 0) {
+          setMessages((prev) => (prev.length === 0 ? data.messages!.map((m) => ({ role: m.role, content: m.content })) : prev));
+        }
+      } catch {
+        // history is best-effort; chat still works without it
+      } finally {
+        if (!cancelled) setHistoryLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  // Best-effort append to the persisted thread. Live-agent turns are saved
+  // server-side by the chat proxy; this is used for preview-mode turns and
+  // for user messages whose turn errored out.
+  const saveHistory = useCallback(
+    async (msgs: Msg[]) => {
+      if (msgs.length === 0) return;
+      try {
+        await fetch("/api/chat/history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ boxId: id, messages: msgs }),
+        });
+      } catch {
+        // non-fatal
+      }
+    },
+    [id]
+  );
 
   const refresh = useCallback(async () => {
     try {
@@ -138,11 +181,13 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
     const text = input.trim();
     if (!text || streaming || !canChat) return;
     setInput("");
-    const next: Msg[] = [...messages, { role: "user", content: text }];
+    const userMsg: Msg = { role: "user", content: text };
+    const next: Msg[] = [...messages, userMsg];
     setMessages([...next, { role: "assistant", content: "" }]);
     setStreaming(true);
     try {
       if (liveChat && box) {
+        // Live turn — the server-side proxy persists user+assistant on success.
         const reply = await chatWithBox(box.id, next);
         setMessages([...next, { role: "assistant", content: reply }]);
       } else if (talent) {
@@ -164,10 +209,17 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
           acc += decoder.decode(value, { stream: true });
           setMessages([...next, { role: "assistant", content: acc }]);
         }
+        // Preview turn — persist both sides client-side.
+        const saved: Msg[] = acc.trim()
+          ? [userMsg, { role: "assistant", content: acc }]
+          : [userMsg];
+        void saveHistory(saved);
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
       setMessages(next);
+      // Keep the user's message in the thread even though the turn failed.
+      void saveHistory([userMsg]);
     } finally {
       setStreaming(false);
     }
@@ -295,6 +347,10 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
                 doAction(async () => {
                   await destroyBox(box.id);
                   removeHire(box.id);
+                  // Clear the persisted thread for this contract (best effort).
+                  fetch(`/api/chat/history?boxId=${encodeURIComponent(box.id)}`, {
+                    method: "DELETE",
+                  }).catch(() => {});
                   router.push("/team");
                 }, "Contract ended");
               }
@@ -413,9 +469,11 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
             <div ref={chatRef} className="chat-scroll flex-1 space-y-3 overflow-y-auto px-4 pb-3">
               {messages.length === 0 && (
                 <p className="pt-8 text-center text-xs text-muted-foreground">
-                  {canChat
-                    ? `Check in with ${displayName.split(" ")[0]}, assign tasks, or ask for a status update.`
-                    : "Chat requires a running agent or a linked talent profile."}
+                  {!historyLoaded
+                    ? "Loading conversation…"
+                    : canChat
+                      ? `Check in with ${displayName.split(" ")[0]}, assign tasks, or ask for a status update.`
+                      : "Chat requires a running agent or a linked talent profile."}
                 </p>
               )}
               {messages.map((m, i) => (
