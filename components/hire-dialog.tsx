@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { deployBox, checkHealth } from "@/lib/boxclaws";
+import { bootstrapAgentTools } from "@/lib/agent-skills";
 import { recordHire } from "@/lib/hires";
 import { generateAgentFiles } from "@/lib/soul-generator";
 import type { Talent } from "@/lib/talents";
@@ -45,6 +46,9 @@ export function HireDialog({
     });
 
     recordHire(box.id, talent.id);
+    // Equip the new agent with its tool skills (document/pdf/ocr/media/
+    // spreadsheet/research). Best-effort — the hire succeeds regardless.
+    void bootstrapAgentTools(box.id);
     toast.success(`${talent.name} hired! Setting up their workspace…`);
     onOpenChange(false);
     router.push(`/team/${box.id}`);
