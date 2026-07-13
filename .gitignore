@@ -34,5 +34,8 @@ Thumbs.db
 # Vercel
 .vercel
 
+# oh-my-claudecode local state
+.omc/
+
 # TypeScript
 *.tsbuildinfo

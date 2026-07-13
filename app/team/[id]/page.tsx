@@ -6,13 +6,11 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  Monitor,
   Send,
   Loader2,
   Pause,
   Play,
   Trash2,
-  ExternalLink,
   Activity,
   Clock,
   CheckCircle2,
@@ -34,17 +32,13 @@ import {
 } from "@/lib/boxclaws";
 import { getHire, removeHire } from "@/lib/hires";
 import { getTalent, formatRate, TIER_LABELS, type Talent } from "@/lib/talents";
+import { AgentComputer } from "@/components/agent-computer";
+import { useAgentActivity } from "@/lib/use-agent-activity";
 import { cn } from "@/lib/utils";
 
 interface Msg {
   role: "user" | "assistant";
   content: string;
-}
-
-interface ActivityItem {
-  time: string;
-  text: string;
-  type: "info" | "success" | "warn";
 }
 
 export default function EmployeePage({ params }: { params: Promise<{ id: string }> }) {
@@ -131,7 +125,12 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
   const isRunning = box?.state === "running";
   const vnc = box ? novncUrl(box, { scale: true }) : null;
 
-  // Simulated performance metrics derived from box data
+  // Live tool-use telemetry from the agent's OpenClaw session. Polls faster
+  // while a chat turn is in flight so the computer panel tracks the work.
+  const activity = useAgentActivity(id, { enabled: isRunning, fast: streaming });
+
+  // Real metrics: uptime and billing from box age, actions from the live
+  // telemetry, messages from the persisted thread.
   const metrics = useMemo(() => {
     if (!box) return null;
     const created = box.createdAt ? new Date(box.createdAt) : new Date();
@@ -144,31 +143,11 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
           : hours < 48
             ? `${hours.toFixed(1)}h`
             : `${Math.floor(hours / 24)}d ${Math.round(hours % 24)}h`,
-      tasks: Math.max(1, Math.floor(hours * 2.4)),
+      actions: activity.events.filter((e) => e.status !== "running").length,
       cost: `$${(hours * rate).toFixed(2)}`,
-      messages: Math.max(2, Math.floor(hours * 5.1)),
+      messages: messages.length,
     };
-  }, [box, talent]);
-
-  const activity: ActivityItem[] = useMemo(() => {
-    if (!box) return [];
-    const base: ActivityItem[] = [
-      { time: "just now", text: isRunning ? "Heartbeat OK — agent active" : "Agent paused", type: isRunning ? "success" : "warn" },
-    ];
-    if (isRunning) {
-      base.push(
-        { time: "12m ago", text: "Completed task: inbox triage sweep", type: "success" },
-        { time: "38m ago", text: "Started research on assigned prospect list", type: "info" },
-        { time: "1h ago", text: "Daily standup summary posted", type: "info" }
-      );
-    }
-    base.push({
-      time: box.createdAt ? new Date(box.createdAt).toLocaleString() : "—",
-      text: `Hired and onboarded${talent ? ` as ${talent.role}` : ""}`,
-      type: "success",
-    });
-    return base;
-  }, [box, isRunning, talent]);
+  }, [box, talent, activity.events, messages.length]);
 
   // Chat routing: when the box is deployed and running, messages go to the
   // REAL agent (its OpenClaw gateway, with browser/exec tools) via the
@@ -366,94 +345,14 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
       {metrics && (
         <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
           <MetricCard icon={<Clock className="h-4 w-4" />} label="Uptime" value={metrics.uptime} />
-          <MetricCard icon={<CheckCircle2 className="h-4 w-4" />} label="Tasks completed" value={String(metrics.tasks)} />
-          <MetricCard icon={<Activity className="h-4 w-4" />} label="Messages handled" value={String(metrics.messages)} />
+          <MetricCard icon={<CheckCircle2 className="h-4 w-4" />} label="Tool actions" value={String(metrics.actions)} />
+          <MetricCard icon={<Activity className="h-4 w-4" />} label="Messages" value={String(metrics.messages)} />
           <MetricCard icon={<Cpu className="h-4 w-4" />} label="Compute spend" value={metrics.cost} accent />
         </div>
       )}
 
+      {/* Manus-style split: chat on the left, the agent's computer on the right */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {/* VNC viewer — 2 cols */}
-        <Card className="xl:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Monitor className="h-4 w-4 text-emerald-400" /> Live Workspace
-            </CardTitle>
-            {vnc && (
-              <a
-                href={vnc}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-              >
-                Open in new tab <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-hidden rounded-lg border border-border/60 bg-black">
-              <div className="flex items-center justify-between border-b border-border/60 bg-white/[0.03] px-3 py-1.5">
-                <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  <Monitor className="h-3 w-3" />
-                  {displayName} · desktop
-                </span>
-                {isRunning ? (
-                  <span className="flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-widest text-emerald-300">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                    LIVE
-                  </span>
-                ) : (
-                  <span className="font-mono text-[10px] tracking-widest text-muted-foreground">
-                    PAUSED
-                  </span>
-                )}
-              </div>
-              <div className="aspect-video">
-              {isRunning && vnc ? (
-                <iframe src={vnc} className="h-full w-full" title={`${displayName} workspace`} />
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                  <Monitor className="h-8 w-8" />
-                  <p className="text-sm">{isRunning ? "Screen unavailable" : "Agent is paused"}</p>
-                  {!isRunning && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => doAction(() => startBox(box.id), `${displayName} back to work`)}
-                    >
-                      <Play className="mr-1.5 h-3.5 w-3.5" /> Resume work
-                    </Button>
-                  )}
-                </div>
-              )}
-              </div>
-            </div>
-
-            {/* Activity feed — timeline with rail */}
-            <div className="mt-5">
-              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-                <Activity className="h-4 w-4 text-emerald-400" /> Work Log
-              </h3>
-              <div className="relative ml-1 space-y-4 border-l border-border/80 pl-5">
-                {activity.map((a, i) => (
-                  <div key={i} className="relative text-sm">
-                    <span
-                      className={cn(
-                        "absolute -left-[25px] top-1.5 h-2 w-2 rounded-full ring-4 ring-background",
-                        a.type === "success" && "bg-emerald-400",
-                        a.type === "info" && "bg-cyan-400",
-                        a.type === "warn" && "bg-amber-400"
-                      )}
-                    />
-                    <p className="leading-snug">{a.text}</p>
-                    <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{a.time}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Chat panel */}
         <Card className="flex h-[640px] flex-col">
           <CardHeader className="pb-3">
@@ -519,6 +418,16 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
             </div>
           </CardContent>
         </Card>
+
+        {/* The agent's computer — live desktop, terminal, files, and steps */}
+        <AgentComputer
+          box={box}
+          displayName={displayName}
+          isRunning={isRunning}
+          activity={activity}
+          onResume={() => doAction(() => startBox(box.id), `${displayName} back to work`)}
+          className="h-[640px] xl:col-span-2"
+        />
       </div>
     </div>
   );

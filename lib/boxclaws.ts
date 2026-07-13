@@ -116,20 +116,26 @@ export async function chatWithBox(
   return reply;
 }
 
-export function novncUrl(box: BoxRecord, opts?: { scale?: boolean }): string | null {
+export function novncUrl(
+  box: BoxRecord,
+  opts?: { scale?: boolean; viewOnly?: boolean }
+): string | null {
   // Hosted backend (Fly): server returns a ready-made public URL through its
-  // token-guarded VNC proxy. Prefer it.
-  if (box.vncUrl) {
-    if (opts?.scale && !box.vncUrl.includes("resize=")) {
-      const sep = box.vncUrl.includes("?") ? "&" : "?";
-      return `${box.vncUrl}${sep}resize=scale&view_only=false`;
-    }
-    return box.vncUrl;
+  // token-guarded VNC proxy. Prefer it. Local dev falls back to per-box ports.
+  const raw = box.vncUrl
+    ? box.vncUrl
+    : box.ports?.novnc
+      ? `http://localhost:${box.ports.novnc}/vnc.html?autoconnect=true`
+      : null;
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    url.searchParams.set("autoconnect", "true");
+    if (opts?.scale) url.searchParams.set("resize", "scale");
+    // view_only drives the watch vs take-control mode of the desktop panel.
+    url.searchParams.set("view_only", opts?.viewOnly ? "true" : "false");
+    return url.toString();
+  } catch {
+    return raw;
   }
-  // Local dev fallback: Box Claws on localhost with per-box host ports.
-  if (!box.ports?.novnc) return null;
-  const params = opts?.scale
-    ? "autoconnect=true&resize=scale&view_only=false"
-    : "autoconnect=true";
-  return `http://localhost:${box.ports.novnc}/vnc.html?${params}`;
 }
