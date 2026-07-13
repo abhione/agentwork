@@ -8,12 +8,14 @@
 import type { Talent } from './talents';
 import type { OnboardingAnswers } from './onboarding-questions';
 
-interface GeneratedFiles {
+// Type alias (not interface) so it satisfies Record<string, string> via an
+// implicit index signature — deployBox() takes agentFiles as a string map.
+type GeneratedFiles = {
   'SOUL.md': string;
   'AGENTS.md': string;
   'MEMORY.md': string;
   'memory/NOW.md': string;
-}
+};
 
 /**
  * Generate all agent workspace files from talent + onboarding answers

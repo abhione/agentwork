@@ -116,26 +116,33 @@ export async function chatWithBox(
   return reply;
 }
 
+/**
+ * Set one query param without re-serializing the rest of the URL. The hosted
+ * vncUrl carries an auth token and a pre-encoded `path` param — a full
+ * URL/searchParams round-trip could re-encode those bytes, so everything
+ * except the named param must pass through byte-exact.
+ */
+function setUrlParam(url: string, key: string, value: string): string {
+  const re = new RegExp(`([?&])${key}=[^&]*`);
+  if (re.test(url)) return url.replace(re, `$1${key}=${value}`);
+  return `${url}${url.includes("?") ? "&" : "?"}${key}=${value}`;
+}
+
 export function novncUrl(
   box: BoxRecord,
   opts?: { scale?: boolean; viewOnly?: boolean }
 ): string | null {
   // Hosted backend (Fly): server returns a ready-made public URL through its
   // token-guarded VNC proxy. Prefer it. Local dev falls back to per-box ports.
-  const raw = box.vncUrl
+  let url = box.vncUrl
     ? box.vncUrl
     : box.ports?.novnc
-      ? `http://localhost:${box.ports.novnc}/vnc.html?autoconnect=true`
+      ? `http://localhost:${box.ports.novnc}/vnc.html`
       : null;
-  if (!raw) return null;
-  try {
-    const url = new URL(raw);
-    url.searchParams.set("autoconnect", "true");
-    if (opts?.scale) url.searchParams.set("resize", "scale");
-    // view_only drives the watch vs take-control mode of the desktop panel.
-    url.searchParams.set("view_only", opts?.viewOnly ? "true" : "false");
-    return url.toString();
-  } catch {
-    return raw;
-  }
+  if (!url) return null;
+  url = setUrlParam(url, "autoconnect", "true");
+  if (opts?.scale) url = setUrlParam(url, "resize", "scale");
+  // view_only drives the watch vs take-control mode of the desktop panel.
+  url = setUrlParam(url, "view_only", opts?.viewOnly ? "true" : "false");
+  return url;
 }

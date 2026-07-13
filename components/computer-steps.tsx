@@ -21,11 +21,12 @@ export function ComputerSteps({ events, loaded }: { events: AgentEvent[]; loaded
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
 
+  const lastStatus = events[events.length - 1]?.status;
   useEffect(() => {
     if (stickToBottom.current) {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
     }
-  }, [events.length]);
+  }, [events.length, lastStatus]);
 
   if (!loaded) {
     return (

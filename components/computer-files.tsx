@@ -11,7 +11,9 @@ const PREVIEW_BYTES = "20000";
 
 /** Reject path segments that could escape the workspace or break quoting. */
 function safeRel(path: string): boolean {
-  return !path.split("/").some((seg) => seg === ".." || seg.includes('"') || seg.includes("$"));
+  return !path
+    .split("/")
+    .some((seg) => seg === ".." || /["$`\\]/.test(seg));
 }
 
 /**
