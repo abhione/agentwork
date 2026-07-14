@@ -19,7 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TalentAvatar } from "@/components/talent-avatar";
-import { listBoxes, startBox, stopBox, destroyBox, checkHealth, type BoxRecord } from "@/lib/boxclaws";
+import { listBoxes, startBox, stopBox, destroyBox, checkHealth, novncUrl, type BoxRecord } from "@/lib/boxclaws";
 import { getHires } from "@/lib/hires";
 import { getTalent, formatRate, type Talent } from "@/lib/talents";
 import { cn } from "@/lib/utils";
@@ -216,9 +216,9 @@ export default function TeamPage() {
                       )}
                     </div>
                     <div className="aspect-video">
-                      {isRunning && box.ports?.novnc ? (
+                      {isRunning && novncUrl(box, { scale: true }) ? (
                         <iframe
-                          src={`http://localhost:${box.ports.novnc}/vnc.html?autoconnect=true&resize=scale&view_only=true`}
+                          src={novncUrl(box, { scale: true })!}
                           className="pointer-events-none h-full w-full origin-top-left"
                           title={`${box.name} screen`}
                         />
