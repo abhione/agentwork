@@ -49,7 +49,7 @@ export function AgentComputer({ box, displayName, isRunning, activity, onResume,
   const [takeover, setTakeover] = useState(false);
 
   const firstName = displayName.split(" ")[0];
-  const vnc = novncUrl(box, { scale: true, viewOnly: !takeover });
+  const vnc = novncUrl(box, { scale: true });
   const { currentTool } = activity;
 
   const headline = !isRunning
@@ -144,12 +144,12 @@ export function AgentComputer({ box, displayName, isRunning, activity, onResume,
           <div className="min-h-0 flex-1">
             {tab === "desktop" &&
               (isRunning && vnc ? (
-                <iframe
-                  key={takeover ? "control" : "watch"}
-                  src={vnc}
-                  className="h-full w-full"
-                  title={`${displayName} desktop`}
-                />
+                <div className="relative h-full w-full">
+                  <iframe src={vnc} className="h-full w-full" title={`${displayName} desktop`} />
+                  {/* Watch mode: intercept input at the panel layer so the VNC
+                      URL (and connection) never changes between modes. */}
+                  {!takeover && <div className="absolute inset-0 z-10" aria-hidden />}
+                </div>
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
                   <Monitor className="h-8 w-8" />

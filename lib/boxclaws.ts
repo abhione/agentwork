@@ -128,21 +128,21 @@ function setUrlParam(url: string, key: string, value: string): string {
   return `${url}${url.includes("?") ? "&" : "?"}${key}=${value}`;
 }
 
-export function novncUrl(
-  box: BoxRecord,
-  opts?: { scale?: boolean; viewOnly?: boolean }
-): string | null {
+export function novncUrl(box: BoxRecord, opts?: { scale?: boolean }): string | null {
   // Hosted backend (Fly): server returns a ready-made public URL through its
-  // token-guarded VNC proxy. Prefer it. Local dev falls back to per-box ports.
-  let url = box.vncUrl
-    ? box.vncUrl
-    : box.ports?.novnc
-      ? `http://localhost:${box.ports.novnc}/vnc.html`
-      : null;
-  if (!url) return null;
-  url = setUrlParam(url, "autoconnect", "true");
-  if (opts?.scale) url = setUrlParam(url, "resize", "scale");
-  // view_only drives the watch vs take-control mode of the desktop panel.
-  url = setUrlParam(url, "view_only", opts?.viewOnly ? "true" : "false");
-  return url;
+  // token-guarded VNC proxy. Return it byte-exact unless scaling is asked for
+  // (the proxy/noVNC stack is sensitive to URL changes — watch vs control is
+  // handled by the panel overlay, never by rewriting this URL).
+  if (box.vncUrl) {
+    if (!opts?.scale) return box.vncUrl;
+    let url = setUrlParam(box.vncUrl, "resize", "scale");
+    url = setUrlParam(url, "view_only", "false");
+    return url;
+  }
+  // Local dev fallback: Box Claws on localhost with per-box host ports.
+  if (!box.ports?.novnc) return null;
+  const params = opts?.scale
+    ? "autoconnect=true&resize=scale&view_only=false"
+    : "autoconnect=true";
+  return `http://localhost:${box.ports.novnc}/vnc.html?${params}`;
 }
